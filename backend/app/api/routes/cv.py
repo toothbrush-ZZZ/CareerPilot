@@ -23,6 +23,13 @@ async def upload_cv(user: CurrentUser, file: UploadFile = File(...)):
             user["user_id"], 
             db
         )
+        
+        user_dir = f"uploads/{user['user_id']}"
+        os.makedirs(user_dir, exist_ok=True)
+        file_path = f"{user_dir}/cv.pdf" if file.filename.lower().endswith('.pdf') else f"{user_dir}/cv.docx"
+        with open(file_path, "wb") as f:
+            f.write(content)
+            
         return result
 
 @router.get("/status")
@@ -61,7 +68,6 @@ async def delete_cv(user: CurrentUser):
 @router.post("/build")
 async def build_cv(user: CurrentUser, data: dict):
     from app.utils.text import cv_builder_to_text
-    from app.rag.pdf_builder import CVPDFBuilder
     import os
     
     cv_text = cv_builder_to_text(data)
@@ -73,19 +79,4 @@ async def build_cv(user: CurrentUser, data: dict):
             user["user_id"], 
             db
         )
-        
-        os.makedirs(f"uploads/{user['user_id']}", exist_ok=True)
-        pdf_path = f"uploads/{user['user_id']}/cv.pdf"
-        builder = CVPDFBuilder()
-        builder.generate(data, pdf_path)
-        
-        result["pdf_url"] = f"/api/v1/cv/download"
         return result
-
-@router.get("/download")
-async def download_cv(user: CurrentUser):
-    from fastapi.responses import FileResponse
-    pdf_path = f"uploads/{user['user_id']}/cv.pdf"
-    if not os.path.exists(pdf_path):
-        raise HTTPException(status_code=404, detail="CV PDF not found")
-    return FileResponse(pdf_path, filename="careerpilot_cv.pdf")

@@ -2,20 +2,21 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY, -- matches Supabase auth.uid() or our JWT sub
+    id UUID PRIMARY KEY, 
     email TEXT NOT NULL UNIQUE,
+    password_hash TEXT,
     full_name TEXT,
     location_city TEXT,
-    location_country TEXT, -- two-letter code
+    location_country TEXT, 
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS cv_chunks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    section TEXT NOT NULL, -- experience | education | skills | projects | other
+    section TEXT NOT NULL,
     content TEXT NOT NULL,
-    embedding vector(384), -- bge-small-en-v1.5
+    embedding vector(384),
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS applications (
     company TEXT NOT NULL,
     location TEXT,
     job_url TEXT,
-    status TEXT NOT NULL DEFAULT 'applied', -- applied | interviewing | offer | rejected
+    status TEXT NOT NULL DEFAULT 'applied',
     notes TEXT,
     applied_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
