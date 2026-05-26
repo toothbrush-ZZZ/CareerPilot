@@ -69,23 +69,13 @@ async def chat(request: ChatRequest, user: CurrentUser):
     
     full_system_prompt = SYSTEM_PROMPT.format(cv_context=cv_context)
     
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=full_system_prompt)
+    from app.services import llm_factory
+    
+    messages_for_ai = []
+    for msg in history:
+        messages_for_ai.append({"role": msg.role, "content": msg.content})
         
-        gemini_history = []
-        for msg in history[:-1]:
-            gemini_history.append({"role": "user" if msg.role == "user" else "model", "parts": [msg.content]})
-            
-        chat_session = model.start_chat(history=gemini_history)
-        response = await asyncio.to_thread(chat_session.send_message, request.message)
-        ai_response = response.text
-    except Exception as e:
-        print(f"Gemini error, falling back to Groq: {e}")
-        messages = [{"role": "system", "content": full_system_prompt}]
-        for msg in history:
-            messages.append({"role": msg.role, "content": msg.content})
-        ai_response = await groq.chat_completion(messages)
+    ai_response = await llm_factory.get_ai_response(messages_for_ai, full_system_prompt)
 
     history.append(ChatMessage(role="assistant", content=ai_response))
     if len(history) > 20: history = history[-20:]

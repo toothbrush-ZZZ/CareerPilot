@@ -38,6 +38,9 @@ class JobHunterAgent:
         if cached:
             return cached
 
+        from app.jobs.mock import MockJobClient
+        mock_client = MockJobClient()
+
         search_tasks = [
             self.remotive.search(query, limit=10),
             self.arbeitnow.search(query, location=location, limit=10),
@@ -51,8 +54,15 @@ class JobHunterAgent:
                 all_jobs.extend(res)
         
         if len(all_jobs) < 5:
+            # Try web search
             web_jobs = await self.scraper.ddg_search_jobs(query, location=location)
             all_jobs.extend(web_jobs)
+            
+            # If still low, use mock data as ultimate fallback
+            if len(all_jobs) < 3:
+                mock_jobs = await mock_client.search(query, location=location)
+                all_jobs.extend(mock_jobs)
+
         deduped_jobs = self._deduplicate(all_jobs)
         # In a real system, we'd batch the fit scoring or run it in parallel
         # For simplicity here, we process top 20

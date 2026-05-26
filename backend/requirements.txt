@@ -17,4 +17,4 @@ google-generativeai
 spacy
 beautifulsoup4
 duckduckgo-search
-fpdf2
+passlib[bcrypt]

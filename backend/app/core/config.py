@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # Auth
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+    
+    # Ollama (Free alternative)
+    OLLAMA_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3:8b"
     
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
