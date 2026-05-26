@@ -94,24 +94,6 @@ docker compose up -d backend
 
 ---
 
-## Windows curl notes
-
-- Git Bash / WSL: use the curl examples exactly as shown.
-- PowerShell: use `curl.exe` if `curl` is aliased to `Invoke-WebRequest`, and prefer full one-line commands.
-- CMD: use `curl.exe` and keep the command on one line; JSON bodies must use escaped quotes like `-d "{\"key\":\"value\"}"`.
-
-Example PowerShell:
-
-```powershell
-curl.exe -s -X POST "http://localhost:8000/api/v1/auth/signup" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"
-```
-
-Example CMD:
-
-```cmd
-curl.exe -s -X POST "http://localhost:8000/api/v1/auth/signup" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"
-```
-
 ## 3. Layer 1 — No-auth health checks
 
 Run these first. They do not need a JWT.
@@ -121,8 +103,6 @@ Run these first. They do not need a JWT.
 ```bash
 curl -s http://localhost:8000/
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/`
 
 **Expected:**
 
@@ -135,8 +115,6 @@ curl -s http://localhost:8000/
 ```bash
 curl -s http://localhost:8000/health
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/health`
 
 **Expected (success):**
 
@@ -158,8 +136,6 @@ curl -s http://localhost:8000/health
 curl -s http://localhost:8001/health
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8001/health`
-
 **Expected:**
 
 ```json
@@ -171,8 +147,6 @@ First request to `/embed` may be slow while the model loads.
 ---
 
 ## 4. Layer 2 — Authentication
-
-> Windows: Git Bash and WSL work with the curl commands as written. For PowerShell/CMD, use `curl.exe` and one-line commands if the multi-line bash syntax fails.
 
 Protected routes need:
 
@@ -189,12 +163,6 @@ curl -s -X POST http://localhost:8000/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"
 ```
-
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/auth/signup" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"`
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/auth/signup" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"`
 
 **Expected (201/200):**
 
@@ -241,12 +209,6 @@ curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\"}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/auth/login" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\"}"`
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/auth/login" -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\"}"`
-
 Same response shape as signup.
 
 ### 4.3 Invalid token (sanity check)
@@ -256,15 +218,11 @@ curl -s http://localhost:8000/api/v1/profile \
   -H "Authorization: Bearer invalid"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/profile -H "Authorization: Bearer invalid"`
-
 **Expected:** `401` with authentication error.
 
 ---
 
 ## 5. Layer 3 — Protected endpoints (by feature)
-
-> Windows: run these curl examples in Git Bash/WSL as written. In PowerShell/CMD, replace `curl` with `curl.exe` and avoid bash-style backslash line continuations.
 
 Replace `$TOKEN` with your JWT in all examples.
 
@@ -277,8 +235,6 @@ curl -s http://localhost:8000/api/v1/profile \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/profile -H "Authorization: Bearer %TOKEN%"`
-
 **Expected:** JSON with `id`, `email`, `full_name`, `location_city`, `location_country`.
 
 **Update profile**
@@ -289,12 +245,6 @@ curl -s -X POST http://localhost:8000/api/v1/profile \
   -H "Content-Type: application/json" \
   -d "{\"full_name\":\"Test User\",\"location_city\":\"Dhaka\",\"location_country\":\"Bangladesh\"}"
 ```
-
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/profile" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"full_name\":\"Test User\",\"location_city\":\"Dhaka\",\"location_country\":\"Bangladesh\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/profile" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"full_name\":\"Test User\",\"location_city\":\"Dhaka\",\"location_country\":\"Bangladesh\"}"
 
 **Expected:** `{"status":"success","message":"Profile updated"}`
 
@@ -309,8 +259,6 @@ curl -s http://localhost:8000/api/v1/cv/status \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/cv/status -H "Authorization: Bearer %TOKEN%"`
-
 **Expected:** `{"has_cv":false}`
 
 **Upload CV** (PDF or DOCX, max 5 MB)
@@ -319,16 +267,6 @@ curl -s http://localhost:8000/api/v1/cv/status \
 curl -s -X POST http://localhost:8000/api/v1/cv/upload \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@/path/to/your/resume.pdf"
-```
-
-Windows PowerShell/CMD:
-
-```powershell
-curl.exe -s -X POST "http://localhost:8000/api/v1/cv/upload" -H "Authorization: Bearer $TOKEN" -F "file=@C:\path\to\your\resume.pdf"
-```
-
-```cmd
-curl.exe -s -X POST "http://localhost:8000/api/v1/cv/upload" -H "Authorization: Bearer %TOKEN%" -F "file=@C:\path\to\your\resume.pdf"
 ```
 
 **Expected:** JSON with `chunks_stored`, `sections`, optional `extracted_location`.
@@ -342,8 +280,6 @@ curl -s http://localhost:8000/api/v1/cv/status \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/cv/status -H "Authorization: Bearer %TOKEN%"`
-
 **Expected:** `has_cv: true`, `chunk_count` > 0, `sections` array.
 
 **Build CV from JSON** (alternative to file upload)
@@ -355,20 +291,12 @@ curl -s -X POST http://localhost:8000/api/v1/cv/build \
   -d "{\"name\":\"Test User\",\"summary\":\"Software engineer\",\"skills\":[\"Python\",\"FastAPI\"]}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/cv/build" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"name\":\"Test User\",\"summary\":\"Software engineer\",\"skills\":[\"Python\",\"FastAPI\"]}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/cv/build" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"name\":\"Test User\",\"summary\":\"Software engineer\",\"skills\":[\"Python\",\"FastAPI\"]}"
-
 **Delete CV**
 
 ```bash
 curl -s -X DELETE http://localhost:8000/api/v1/cv \
   -H "Authorization: Bearer $TOKEN"
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s -X DELETE "http://localhost:8000/api/v1/cv" -H "Authorization: Bearer %TOKEN%"`
 
 ---
 
@@ -381,8 +309,6 @@ curl -s "http://localhost:8000/api/v1/jobs/search?query=python%20developer&max_r
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s "http://localhost:8000/api/v1/jobs/search?query=python%20developer&max_results=5" -H "Authorization: Bearer %TOKEN%"`
-
 **Expected:** List of job objects (source depends on scrapers: Remotive, Arbeitnow, etc.).
 
 **User location**
@@ -392,8 +318,6 @@ curl -s http://localhost:8000/api/v1/jobs/location \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/jobs/location -H "Authorization: Bearer %TOKEN%"`
-
 **Manual fit score** (needs CV uploaded + AI key or Ollama)
 
 ```bash
@@ -402,12 +326,6 @@ curl -s -X POST http://localhost:8000/api/v1/jobs/manual-fit \
   -H "Content-Type: application/json" \
   -d "{\"job_description\":\"We need Python, FastAPI, PostgreSQL, 3+ years experience.\"}"
 ```
-
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/jobs/manual-fit" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"job_description\":\"We need Python, FastAPI, PostgreSQL, 3+ years experience.\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/jobs/manual-fit" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"job_description\":\"We need Python, FastAPI, PostgreSQL, 3+ years experience.\"}"
 
 ---
 
@@ -422,20 +340,12 @@ curl -s -X POST http://localhost:8000/api/v1/tracker/applications \
   -d "{\"job_title\":\"Backend Engineer\",\"company\":\"Acme Corp\",\"status\":\"applied\",\"location\":\"Remote\"}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/tracker/applications" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"job_title\":\"Backend Engineer\",\"company\":\"Acme Corp\",\"status\":\"applied\",\"location\":\"Remote\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/tracker/applications" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"job_title\":\"Backend Engineer\",\"company\":\"Acme Corp\",\"status\":\"applied\",\"location\":\"Remote\"}"
-
 **List applications**
 
 ```bash
 curl -s http://localhost:8000/api/v1/tracker/applications \
   -H "Authorization: Bearer $TOKEN"
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/tracker/applications -H "Authorization: Bearer %TOKEN%"`
 
 Copy an application `id` from the response for update/delete.
 
@@ -448,20 +358,12 @@ curl -s -X PATCH "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" \
   -d "{\"status\":\"interviewing\",\"notes\":\"Phone screen scheduled\"}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X PATCH "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"status\":\"interviewing\",\"notes\":\"Phone screen scheduled\"}"
->
-> Windows CMD:
-> `curl.exe -s -X PATCH "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"status\":\"interviewing\",\"notes\":\"Phone screen scheduled\"}"
-
 **Delete application**
 
 ```bash
 curl -s -X DELETE "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" \
   -H "Authorization: Bearer $TOKEN"
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s -X DELETE "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" -H "Authorization: Bearer %TOKEN%"`
 
 **Goals — create**
 
@@ -472,12 +374,6 @@ curl -s -X POST http://localhost:8000/api/v1/tracker/goals \
   -d "{\"text\":\"Apply to 5 jobs this week\",\"due_date\":\"2026-06-01\"}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/tracker/goals" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"text\":\"Apply to 5 jobs this week\",\"due_date\":\"2026-06-01\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/tracker/goals" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"text\":\"Apply to 5 jobs this week\",\"due_date\":\"2026-06-01\"}"
-
 **Goals — list**
 
 ```bash
@@ -485,16 +381,12 @@ curl -s http://localhost:8000/api/v1/tracker/goals \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/tracker/goals -H "Authorization: Bearer %TOKEN%"`
-
 **Goals — toggle complete** (use goal `id` from list)
 
 ```bash
 curl -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" \
   -H "Authorization: Bearer $TOKEN"
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" -H "Authorization: Bearer %TOKEN%"`
 
 ---
 
@@ -504,8 +396,6 @@ curl -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" \
 curl -s http://localhost:8000/api/v1/dashboard/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
-
-> Windows PowerShell/CMD: `curl.exe -s http://localhost:8000/api/v1/dashboard/stats -H "Authorization: Bearer %TOKEN%"`
 
 **Expected:** `total_applications`, `this_week`, `by_status`, `goals_total`, `goals_completed`, `nudges` (array of strings).
 
@@ -520,12 +410,6 @@ curl -s -X POST http://localhost:8000/api/v1/assistant/chat \
   -d "{\"message\":\"What skills are on my CV?\",\"session_id\":\"test-session-1\"}"
 ```
 
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/assistant/chat" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"message\":\"What skills are on my CV?\",\"session_id\":\"test-session-1\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/assistant/chat" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"message\":\"What skills are on my CV?\",\"session_id\":\"test-session-1\"}"
-
 **Expected:** `response`, `session_id`, `history`.
 
 If all AI providers fail, response text mentions trouble connecting to AI engines.
@@ -537,8 +421,6 @@ curl -s -X DELETE "http://localhost:8000/api/v1/assistant/session/test-session-1
   -H "Authorization: Bearer $TOKEN"
 ```
 
-> Windows PowerShell/CMD: `curl.exe -s -X DELETE "http://localhost:8000/api/v1/assistant/session/test-session-1" -H "Authorization: Bearer %TOKEN%"`
-
 ---
 
 ### 5.7 Cover letter (Gemini preferred, Groq fallback)
@@ -549,12 +431,6 @@ curl -s -X POST http://localhost:8000/api/v1/cover-letter/generate \
   -H "Content-Type: application/json" \
   -d "{\"job_description\":\"Python backend role at a fintech startup.\",\"company_name\":\"Acme\",\"role_title\":\"Backend Engineer\",\"user_name\":\"Test User\"}"
 ```
-
-> Windows PowerShell:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/cover-letter/generate" -H "Authorization: Bearer $env:TOKEN" -H "Content-Type: application/json" -d "{\"job_description\":\"Python backend role at a fintech startup.\",\"company_name\":\"Acme\",\"role_title\":\"Backend Engineer\",\"user_name\":\"Test User\"}"
->
-> Windows CMD:
-> `curl.exe -s -X POST "http://localhost:8000/api/v1/cover-letter/generate" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"job_description\":\"Python backend role at a fintech startup.\",\"company_name\":\"Acme\",\"role_title\":\"Backend Engineer\",\"user_name\":\"Test User\"}"
 
 **Expected:** `letter_text`, `word_count`, `key_cv_points_used`.
 
