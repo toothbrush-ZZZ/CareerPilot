@@ -22,10 +22,19 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://cpuser:cppass@db:5432/careerpilot
+      - REDIS_URL=redis://redis:6379
+      - EMBED_URL=http://embed:8001
+      - OLLAMA_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
       - embed
+    volumes:
+      - ./backend:/app
     networks:
       - careerpilot-net
 

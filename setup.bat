@@ -1,6 +1,20 @@
 @echo off
 echo --- CareerPilot Setup ---
 
+:: Docker images (first run)
+if not exist .docker_images_built (
+    echo First-time setup: building Docker images...
+    docker compose build || docker-compose build
+    if %ERRORLEVEL% EQU 0 (
+        echo 1>.docker_images_built
+        echo Docker images built successfully.
+    ) else (
+        echo Docker build failed. You can run "docker compose build" manually.
+    )
+) else (
+    echo Docker images already built. Skipping docker build.
+)
+
 :: Backend
 cd backend
 if not exist venv (
@@ -9,7 +23,6 @@ if not exist venv (
     call venv\Scripts\activate
     echo Installing backend dependencies...
     pip install -r requirements.txt
-    python -m spacy download en_core_web_sm
 ) else (
     echo Backend venv already exists. Skipping install.
 )

@@ -65,8 +65,10 @@ docker compose ps
 
 ```bash
 cd backend
-# Windows
-venv\Scripts\activate
+# Windows PowerShell
+.\venv\Scripts\Activate.ps1
+# Windows CMD
+# venv\Scripts\activate.bat
 # macOS/Linux
 # source venv/bin/activate
 
@@ -182,11 +184,22 @@ curl -s -X POST http://localhost:8000/api/v1/auth/signup \
 Save the token for later steps:
 
 ```bash
+# macOS/Linux or Git Bash
 export TOKEN="<paste access_token>"
 export USER_ID="<paste user_id>"
 ```
 
-Windows (Git Bash): same `export` works. In CMD use `set TOKEN=...`.
+```powershell
+# Windows PowerShell
+$env:TOKEN = "<paste access_token>"
+$env:USER_ID = "<paste user_id>"
+```
+
+```cmd
+:: Windows CMD
+set TOKEN=<paste access_token>
+set USER_ID=<paste user_id>
+```
 
 ### 4.2 Login
 

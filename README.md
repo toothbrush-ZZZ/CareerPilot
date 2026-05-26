@@ -38,6 +38,12 @@ OLLAMA_MODEL=llama3:8b
 ```
 
 ### 3. Start Infrastructure
+If you're running this for the first time, build the Docker images first:
+```bash
+docker-compose build
+# or, with Docker Compose v2: docker compose build
+```
+Start the services:
 ```bash
 docker-compose up -d
 ```
