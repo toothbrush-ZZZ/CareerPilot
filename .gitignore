@@ -1,4 +1,5 @@
 .env
+.env.local
 node_modules
 __pycache__
 .next
@@ -9,4 +10,21 @@ dist
 build
 .pytest_cache
 embed_cache/
+venv/
+.venv/
+uploads/
+frontend/node_modules/
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/app/__pycache__/
+.idea/
+.vscode/
+*.log
+Prompts1/
+Prompts2/
+HybridAgenticArchitecturePrompt.md
+implementation_plan.md.resolved
+implementation_plan_phase_5.md.resolved
+project_overview.md.resolved
 
