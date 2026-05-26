@@ -1,8 +1,14 @@
 import re
 import numpy as np
-from typing import List, Dict, Set
-from sentence_transformers import SentenceTransformer, util
-from app.services import cv_service
+import httpx
+from typing import List, Dict, Set, Optional
+from app.services import cv_service, embed_service
+from app.core.config import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+settings = get_settings()
 
 # Skill keyword bank
 TECH_SKILLS = {
@@ -16,9 +22,38 @@ TECH_SKILLS = {
     "data analysis", "data engineering", "mlops", "devops",
 }
 
+def _section_text(chunks: List[Dict], *keywords: str) -> str:
+    """Match CV chunks by section header keywords (e.g. WORK EXPERIENCE, TECHNICAL SKILLS)."""
+    parts = []
+    for c in chunks:
+        sec = (c.get("section") or "").upper()
+        if any(kw in sec for kw in keywords):
+            parts.append(c["content"])
+    return " ".join(parts)
+
+
 class FitScorer:
     def __init__(self):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        pass
+
+    async def _get_embedding(self, text: str) -> Optional[List[float]]:
+        """Get embedding from central embed service."""
+        try:
+            return await embed_service.embed_one(text[:2000])
+        except Exception as e:
+            logger.error(f"Embedding error in FitScorer for text '{text[:50]}...': {e}")
+        return None
+
+    def _cosine_similarity(self, v1: List[float], v2: List[float]) -> float:
+        """Compute cosine similarity between two vectors."""
+        if not v1 or not v2: return 0.0
+        vec1 = np.array(v1)
+        vec2 = np.array(v2)
+        dot = np.dot(vec1, vec2)
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        if norm1 == 0 or norm2 == 0: return 0.0
+        return float(dot / (norm1 * norm2))
 
     async def compute_fit(self, user_id: str, job_description: str, db) -> Dict:
         """
@@ -28,16 +63,20 @@ class FitScorer:
         """
         chunks = await cv_service.get_cv_chunks(user_id, db)
         
-        cv_skills_text = " ".join([c["content"] for c in chunks if c["section"] == "SKILLS"])
-        cv_exp_text = " ".join([c["content"] for c in chunks if c["section"] == "EXPERIENCE"])
-        cv_edu_text = " ".join([c["content"] for c in chunks if c["section"] == "EDUCATION"])
+        cv_skills_text = _section_text(chunks, "SKILL", "TECHNOLOG")
+        cv_exp_text = _section_text(chunks, "EXPERIENCE", "EMPLOYMENT", "WORK")
+        cv_edu_text = _section_text(chunks, "EDUCATION", "ACADEMIC")
+        cv_proj_text = _section_text(chunks, "PROJECT", "PORTFOLIO")
         cv_full_text = " ".join([c["content"] for c in chunks])
 
         jd_skills = self._extract_skills(job_description)
-        cv_skills = self._extract_skills(cv_skills_text + " " + cv_exp_text)
+        cv_skills = self._extract_skills(cv_skills_text + " " + cv_exp_text + " " + cv_proj_text)
 
         skill_score = self._skill_overlap(jd_skills, cv_skills)
-        exp_score = self._experience_match(job_description, cv_exp_text)
+        
+        # Refactored experience match to use remote embedding
+        exp_score = await self._experience_match(job_description, cv_exp_text)
+        
         kw_score = self._keyword_density(job_description, cv_full_text)
         edu_score = self._education_match(job_description, cv_edu_text)
 
@@ -74,11 +113,18 @@ class FitScorer:
         overlap = len(jd_skills & cv_skills)
         return min(overlap / len(jd_skills), 1.0)
 
-    def _experience_match(self, job_desc: str, cv_exp: str) -> float:
-        if not cv_exp: return 0.0
-        jd_emb = self.model.encode(job_desc, convert_to_tensor=True)
-        cv_emb = self.model.encode(cv_exp, convert_to_tensor=True)
-        sim = util.cos_sim(jd_emb, cv_emb).item()
+    async def _experience_match(self, job_desc: str, cv_exp: str) -> float:
+        if not cv_exp or not job_desc: return 0.0
+        
+        # Get embeddings from internal service
+        jd_emb = await self._get_embedding(job_desc)
+        cv_emb = await self._get_embedding(cv_exp)
+        
+        if not jd_emb or not cv_emb:
+            return 0.5 # Default if service fails
+            
+        sim = self._cosine_similarity(jd_emb, cv_emb)
+        # Scale score: 0.3 similarity is baseline 0, 0.8+ is 1.0
         score = (sim - 0.3) / 0.5 
         return max(0.0, min(1.0, score))
 
@@ -113,13 +159,13 @@ class FitScorer:
         return 0.5
 
     def _generate_reason(self, score: float, matched: List[str], missing: List[str]) -> str:
-        top_matched = ", ".join(matched[:3])
-        top_missing = ", ".join(missing[:3])
+        top_matched = ", ".join(matched[:3]) if matched else "relevant keywords"
+        top_missing = ", ".join(missing[:3]) if missing else "specific niche skills"
         
         if score >= 0.8:
             return f"Excellent match! Your profile aligns strongly with the requirements, especially in {top_matched}."
         if score >= 0.6:
-            return f"Good fit. You have solid experience in {top_matched}, though adding skills like {top_missing} would make you a top candidate."
+            return f"Good fit. You have solid experience in {top_matched}, though adding {top_missing} would make you a top candidate."
         if score >= 0.4:
             return f"Fair match. You bring {top_matched} to the table, but there are notable gaps in {top_missing}."
         return f"Low match. This role requires technical depth in {top_missing} which isn't prominent in your profile yet."

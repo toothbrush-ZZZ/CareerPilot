@@ -17,7 +17,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,8 +32,8 @@ async def health():
         from app.core.redis import redis_manager
         ping = await redis_manager.client.ping()
         return {"status": "ok", "redis": "ok" if ping else "error"}
-    except Exception as e:
-        return {"status": "error", "redis": str(e)}
+    except Exception:
+        return {"status": "error", "redis": "Service unavailable"}
 
 from app.api.routes import profile, cv, jobs, tracker, dashboard, auth
 from app.api import assistant, cover_letter

@@ -36,4 +36,7 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings():
-    return Settings()
+    s = Settings()
+    print(f"DEBUG: OLLAMA_URL={s.OLLAMA_URL}")
+    print(f"DEBUG: OLLAMA_MODEL={s.OLLAMA_MODEL}")
+    return s

@@ -1,14 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from app.middleware.auth import CurrentUser
 from app.schemas.all import CoverLetterRequest, CoverLetterResponse, RefineRequest
-from app.services import cv_service
-from app.core import groq
-from app.core.config import get_settings
-import google.generativeai as genai
-import asyncio
+from app.services import cv_service, llm_factory
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cover-letter", tags=["cover-letter"])
-settings = get_settings()
 
 COVER_LETTER_PROMPT = """
 You are an expert career counselor and professional writer.
@@ -54,14 +52,15 @@ async def generate_cover_letter(request: CoverLetterRequest, user: CurrentUser):
         user_name=request.user_name
     )
     
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = await asyncio.to_thread(model.generate_content, full_prompt)
-        letter_text = response.text
-    except Exception as e:
-        print(f"Gemini error, falling back to Groq: {e}")
-        letter_text = await groq.chat_completion([{"role": "user", "content": full_prompt}])
+    letter_text = await llm_factory.get_ai_response(
+        [{"role": "user", "content": full_prompt}],
+        "You write professional cover letters grounded only in the user's CV.",
+    )
+    if "trouble connecting" in letter_text.lower():
+        raise HTTPException(
+            status_code=503,
+            detail="AI service unavailable. Configure Ollama, GROQ_API_KEY, or GEMINI_API_KEY.",
+        )
 
     key_points = []
     for chunk in context_chunks:
@@ -82,13 +81,15 @@ async def generate_cover_letter(request: CoverLetterRequest, user: CurrentUser):
 async def refine_cover_letter(request: RefineRequest, user: CurrentUser):
     full_prompt = f"Original Letter:\n{request.existing_letter}\n\nFeedback: {request.feedback}\n\nJob Description: {request.job_description}\n\nPlease regenerate the letter incorporating the feedback while staying grounded in the user's CV."
     
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = await asyncio.to_thread(model.generate_content, full_prompt)
-        letter_text = response.text
-    except Exception:
-        letter_text = await groq.chat_completion([{"role": "user", "content": full_prompt}])
+    letter_text = await llm_factory.get_ai_response(
+        [{"role": "user", "content": full_prompt}],
+        "You refine cover letters using the user's feedback while staying CV-grounded.",
+    )
+    if "trouble connecting" in letter_text.lower():
+        raise HTTPException(
+            status_code=503,
+            detail="AI service unavailable. Configure Ollama, GROQ_API_KEY, or GEMINI_API_KEY.",
+        )
         
     return CoverLetterResponse(
         letter_text=letter_text,

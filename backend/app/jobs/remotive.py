@@ -33,5 +33,7 @@ class RemotiveClient:
                     })
                 return jobs
             except Exception as e:
-                print(f"Remotive search error: {e}")
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Remotive search error: {e}")
                 return []

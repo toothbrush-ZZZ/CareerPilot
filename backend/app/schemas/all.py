@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
+from datetime import date
 
 class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -64,6 +65,10 @@ class ApplicationOut(BaseModel):
     notes: Optional[str]
     applied_at: Any
     updated_at: Any
+
+class GoalCreate(BaseModel):
+    text: str
+    due_date: Optional[date] = None
 
 class GoalOut(BaseModel):
     id: str

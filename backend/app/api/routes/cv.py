@@ -16,6 +16,8 @@ async def upload_cv(user: CurrentUser, file: UploadFile = File(...)):
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large (max 5MB)")
     
+    import anyio
+    
     async with get_db(user["user_id"]) as db:
         result = await cv_service.process_and_store_cv(
             content, 
@@ -25,10 +27,15 @@ async def upload_cv(user: CurrentUser, file: UploadFile = File(...)):
         )
         
         user_dir = f"uploads/{user['user_id']}"
-        os.makedirs(user_dir, exist_ok=True)
+        await anyio.to_thread.run_sync(os.makedirs, user_dir, 0o777, True)
+        
         file_path = f"{user_dir}/cv.pdf" if file.filename.lower().endswith('.pdf') else f"{user_dir}/cv.docx"
-        with open(file_path, "wb") as f:
-            f.write(content)
+        
+        def write_file():
+            with open(file_path, "wb") as f:
+                f.write(content)
+                
+        await anyio.to_thread.run_sync(write_file)
             
         return result
 

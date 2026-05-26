@@ -45,5 +45,7 @@ class ArbeitnowClient:
                         
                 return filtered_jobs
             except Exception as e:
-                print(f"Arbeitnow search error: {e}")
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Arbeitnow search error: {e}")
                 return []

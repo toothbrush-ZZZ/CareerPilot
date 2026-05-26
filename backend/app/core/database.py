@@ -26,7 +26,7 @@ async def get_db(user_id: str = None):
     try:
         if user_id:
             await session.execute(
-                text("SET app.current_user_id = :uid"),
+                text("SELECT set_config('app.current_user_id', :uid, false)"),
                 {"uid": user_id}
             )
         yield session

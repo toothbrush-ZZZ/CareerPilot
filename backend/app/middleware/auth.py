@@ -28,10 +28,12 @@ async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, 
             "email": payload.get("email"),
             "role": payload.get("role", "authenticated")
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}"
-        )
+            detail="Could not validate credentials",
+        ) from e
 
 CurrentUser = Annotated[dict, Depends(get_current_user)]

@@ -19,14 +19,14 @@ async def search_jobs(
     max_results: int = 15
 ):
     async with get_db(user["user_id"]) as db:
-        results = await job_hunter.search_jobs(
+        response = await job_hunter.search_jobs(
             query=query,
             user_id=user["user_id"],
             db=db,
             location_override=location,
             max_results=max_results
         )
-        return results
+        return response
 
 @router.post("/manual-fit")
 async def manual_fit(user: CurrentUser, data: dict):

@@ -7,6 +7,9 @@ from app.core.config import get_settings
 import google.generativeai as genai
 import json
 from typing import List, Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/assistant", tags=["assistant"])
 settings = get_settings()
@@ -80,7 +83,7 @@ async def chat(request: ChatRequest, user: CurrentUser):
     history.append(ChatMessage(role="assistant", content=ai_response))
     if len(history) > 20: history = history[-20:]
     
-    await redis_client.set_json(history_key, [m.dict() for m in history], ttl=3600)
+    await redis_client.set_json(history_key, [m.model_dump() for m in history], ttl=3600)
     
     return ChatResponse(
         response=ai_response,
@@ -93,5 +96,3 @@ async def clear_session(session_id: str, user: CurrentUser):
     redis_client = await redis.get_redis()
     await redis_client.delete(f"chat_history:{user['user_id']}:{session_id}")
     return {"status": "success"}
-
-import asyncio

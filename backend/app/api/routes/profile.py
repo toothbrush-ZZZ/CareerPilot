@@ -34,6 +34,7 @@ async def get_profile(user: CurrentUser):
             raise HTTPException(status_code=404, detail="Profile not found")
         
         profile_dict = dict(profile)
+        profile_dict["id"] = str(profile_dict["id"])
         await redis.set_json(cache_key, profile_dict, ttl=600)
         return profile_dict
 
@@ -60,6 +61,8 @@ async def update_profile(data: ProfileUpdate, user: CurrentUser):
                 "country": data.location_country
             }
         )
+        
+        await db.commit()
         
         # Clear cache
         redis = await get_redis()

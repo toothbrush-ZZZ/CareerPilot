@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr
+from typing import Optional, List
 from sqlalchemy import text
 import uuid
 from app.core.database import get_db
@@ -23,7 +24,10 @@ class TokenResponse(BaseModel):
 
 @router.post("/signup", response_model=TokenResponse)
 async def signup(data: UserSignup):
-    async with get_db() as db:
+    user_id = str(uuid.uuid4())
+    hashed_password = auth_service.hash_password(data.password)
+
+    async with get_db(user_id) as db:
         result = await db.execute(
             text("SELECT id FROM profiles WHERE email = :email"),
             {"email": data.email}
@@ -33,10 +37,7 @@ async def signup(data: UserSignup):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
-        
-        user_id = str(uuid.uuid4())
-        hashed_password = auth_service.hash_password(data.password)
-        
+
         await db.execute(
             text("""
                 INSERT INTO profiles (id, email, password_hash, full_name)
@@ -74,7 +75,8 @@ async def login(data: UserLogin):
                 detail="Invalid credentials"
             )
         
-        access_token = auth_service.create_access_token(data={"sub": user["id"], "email": user["email"]})
-        return {"access_token": access_token, "user_id": str(user["id"])}
+        user_id = str(user["id"])
+        access_token = auth_service.create_access_token(data={"sub": user_id, "email": user["email"]})
+        return {"access_token": access_token, "user_id": user_id}
 
-from typing import Optional
+
