@@ -19,7 +19,12 @@ export default function SignupPage() {
     setError('');
     
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/signup`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL not configured');
+      }
+      
+      const response = await axios.post(`${apiUrl}/auth/signup`, {
         email,
         password,
         full_name: fullName

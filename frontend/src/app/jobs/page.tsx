@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function JobsPage() {
   const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
   const [jobs, setJobs] = useState([]);
   const [searching, setSearching] = useState(false);
   const [hasCV, setHasCV] = useState(false);
@@ -31,7 +30,7 @@ export default function JobsPage() {
     
     setSearching(true);
     try {
-      const res = await careerApi.searchJobs(query, location);
+      const res = await careerApi.searchJobs(query);
       setJobs(res.data);
     } catch (err) {
       console.error(err);
@@ -62,20 +61,10 @@ export default function JobsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-blue-400 transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="Job Title, Keywords, or Company"
+              placeholder="e.g. Senior React Developer in London or Remote Python Engineer"
               className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
               value={query}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-            />
-          </div>
-          <div className="w-full md:w-64 relative group">
-            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-blue-400 transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="Location (e.g. Remote)"
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-              value={location}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
             />
           </div>
           <button 
@@ -83,7 +72,7 @@ export default function JobsPage() {
             disabled={searching}
             className="bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
           >
-            {searching ? <Loader2 className="animate-spin" size={20} /> : 'Search'}
+            {searching ? <Loader2 className="animate-spin" size={20} /> : 'Search Opportunities'}
           </button>
         </form>
 
@@ -123,7 +112,7 @@ export default function JobsPage() {
             )) : !searching && (
               <div className="col-span-full py-12 flex flex-col items-center justify-center text-white/20">
                 <Search size={48} className="mb-4" />
-                <p className="text-lg">Enter a search query to find your next role</p>
+                <p className="text-lg">Discover your next role by searching above</p>
               </div>
             )}
           </AnimatePresence>

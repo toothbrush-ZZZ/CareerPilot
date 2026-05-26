@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Search, 
@@ -32,6 +32,29 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/';
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    router.push('/login');
+  };
+
+  // Basic route guard
+  React.useEffect(() => {
+    if (!isAuthPage) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+      }
+    }
+  }, [pathname, isAuthPage, router]);
+
+  if (isAuthPage) {
+    return <div className="min-h-screen bg-[#0a0a0b]">{children}</div>;
+  }
 
   return (
     <div className="flex h-screen bg-[#0a0a0b] text-white overflow-hidden">
@@ -104,6 +127,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
         <div className="p-4 border-t border-white/5">
           <button 
+            onClick={handleLogout}
             className="flex items-center w-full gap-3 px-3 py-3 transition-colors rounded-xl text-white/50 hover:bg-white/5 hover:text-white"
           >
             <LogOut className="w-5 h-5" />

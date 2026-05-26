@@ -67,6 +67,7 @@ export default function LoginPage() {
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all"
               placeholder="name@example.com"
+              autoComplete="email"
             />
           </div>
 
@@ -79,6 +80,7 @@ export default function LoginPage() {
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-600/50 transition-all"
               placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
 
@@ -87,12 +89,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-semibold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition-all transform active:scale-[0.98]"
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <p className="mt-8 text-center text-white/40 text-sm">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-medium">
             Create one for free
           </Link>

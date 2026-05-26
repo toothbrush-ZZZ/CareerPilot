@@ -52,7 +52,7 @@ export default function JobCard({ job, onAnalyze }: JobCardProps) {
             </h3>
             {job.source && (
               <span className="text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5 text-white/30 border border-white/5">
-                {job.source}
+                {job.source === 'arbeitnow' ? 'ArbeitNow' : job.source.charAt(0).toUpperCase() + job.source.slice(1)}
               </span>
             )}
           </div>

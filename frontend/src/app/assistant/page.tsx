@@ -50,7 +50,7 @@ export default function AssistantPage() {
       setMessages(res.data.history);
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error. Please try again." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble connecting right now. Please try again in a moment." }]);
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function AssistantPage() {
             <h1 className="text-2xl font-bold tracking-tight">AI Career Assistant</h1>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-xs text-white/40 uppercase tracking-widest font-bold">Always Grounded in your CV</span>
+              <span className="text-xs text-white/40 uppercase tracking-widest font-bold">Insights personalized to your experience</span>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function AssistantPage() {
             </button>
           </form>
           <div className="mt-3 text-center">
-            <p className="text-[10px] text-white/20 uppercase tracking-widest font-medium">Shift + Enter for multiline • Context: Your CV</p>
+            <p className="text-[10px] text-white/20 uppercase tracking-widest font-medium">Shift + Enter for multiline • Personalized Mode Active</p>
           </div>
         </div>
       </div>

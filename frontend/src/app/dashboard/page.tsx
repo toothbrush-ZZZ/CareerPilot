@@ -11,7 +11,8 @@ import {
   Search,
   Plus,
   AlertCircle,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -53,7 +54,14 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-full">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <Loader2 className="animate-spin text-blue-500" size={40} />
+        <p className="text-white/40 animate-pulse font-medium">Getting your dashboard ready...</p>
+      </div>
+    );
+  }
 
   const statusData = stats ? [
     { name: 'Applied', value: stats.by_status.applied, color: '#3b82f6' },
@@ -68,7 +76,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gradient">Dashboard</h1>
-          <p className="text-white/50 mt-1">Welcome back. Here's your career progress at a glance.</p>
+          <p className="text-white/50 mt-1">Welcome back. Here&apos;s your career progress at a glance.</p>
         </div>
         <div className="flex gap-3">
           <button className="px-4 py-2 rounded-xl glass hover:bg-white/5 transition-all text-sm font-medium">
@@ -156,7 +164,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-6">
           <div className="glass rounded-3xl p-8 h-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">AI Nudges</h3>
+              <h3 className="text-xl font-bold">Career Insights</h3>
               <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
                 <AlertCircle size={20} />
               </div>
@@ -176,7 +184,7 @@ export default function DashboardPage() {
                   </button>
                 </motion.div>
               )) : (
-                <p className="text-white/30 text-center py-8">No nudges today. You're doing great!</p>
+                <p className="text-white/30 text-center py-8">No nudges today. You&apos;re doing great!</p>
               )}
             </div>
           </div>
