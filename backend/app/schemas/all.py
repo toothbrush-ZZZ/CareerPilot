@@ -49,6 +49,33 @@ class ApplicationCreate(BaseModel):
     status: str = "applied"
     notes: Optional[str] = None
 
-class GoalCreate(BaseModel):
+class ApplicationUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    job_url: Optional[str] = None
+
+class ApplicationOut(BaseModel):
+    id: str
+    job_title: str
+    company: str
+    location: Optional[str]
+    job_url: Optional[str]
+    status: str
+    notes: Optional[str]
+    applied_at: Any
+    updated_at: Any
+
+class GoalOut(BaseModel):
+    id: str
     text: str
-    due_date: Optional[str] = None # YYYY-MM-DD
+    due_date: Optional[str]
+    completed: bool
+    created_at: Any
+
+class DashboardStats(BaseModel):
+    total_applications: int
+    this_week: int
+    by_status: Dict[str, int]
+    goals_completed: int
+    goals_total: int
+    nudges: List[str]

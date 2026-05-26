@@ -35,11 +35,13 @@ async def health():
     except Exception as e:
         return {"status": "error", "redis": str(e)}
 
-from app.api.routes import profile, cv, jobs
+from app.api.routes import profile, cv, jobs, tracker, dashboard
 from app.api import assistant, cover_letter
 
 app.include_router(profile.router, prefix="/api/v1")
 app.include_router(cv.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
+app.include_router(tracker.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(assistant.router, prefix="/api/v1")
 app.include_router(cover_letter.router, prefix="/api/v1")
