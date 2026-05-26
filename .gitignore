@@ -21,6 +21,10 @@ backend/app/__pycache__/
 .idea/
 .vscode/
 *.log
+.docker_images_built
+search_results.json
+backend/test_cv.*
+backend/verify_fixes.py
 Prompts1/
 Prompts2/
 HybridAgenticArchitecturePrompt.md
