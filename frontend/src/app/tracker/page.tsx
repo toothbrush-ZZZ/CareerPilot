@@ -121,7 +121,7 @@ export default function TrackerPage() {
                     <ApplicationCard 
                       key={app.id} 
                       app={app} 
-                      onStatusChange={(status) => updateStatus(app.id, status)} 
+                      onStatusChange={(status: string) => updateStatus(app.id, status)} 
                     />
                   ))}
                   <button className="w-full py-4 border border-dashed border-white/10 rounded-2xl text-white/20 hover:text-white/40 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
@@ -213,7 +213,7 @@ function ApplicationCard({ app, onStatusChange }: any) {
           <span>{new Date(app.applied_at).toLocaleDateString()}</span>
         </div>
         {app.job_url && (
-          <a hfref={app.job_url} target="_blank" className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
+          <a href={app.job_url} target="_blank" className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
             <ExternalLink size={12} />
           </a>
         )}

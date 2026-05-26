@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
-from contextlib import async_lifespan
+from contextlib import asynccontextmanager
 from app import embedder
 
 class EmbedRequest(BaseModel):
@@ -11,7 +11,7 @@ class EmbedRequest(BaseModel):
 class EmbedOneRequest(BaseModel):
     text: str
 
-@async_lifespan
+@asynccontextmanager
 async def lifespan(app: FastAPI):
    
     print("Pre-warming embedding model...")

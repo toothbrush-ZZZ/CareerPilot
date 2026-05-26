@@ -44,5 +44,12 @@ export const careerApi = {
   updateApplication: (id: string, data: any) => api.patch(`/tracker/applications/${id}`, data),
   deleteApplication: (id: string) => api.delete(`/tracker/applications/${id}`),
   
+  getGoals: () => api.get('/tracker/goals'),
+  updateGoal: (id: string, data: any) => api.patch(`/tracker/goals/${id}`, data),
+  toggleGoal: (id: string) => api.post(`/tracker/goals/${id}/toggle`),
+  
   getStats: () => api.get('/dashboard/stats'),
+  
+  signup: (data: any) => api.post('/auth/signup', data),
+  login: (data: any) => api.post('/auth/login', data),
 };

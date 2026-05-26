@@ -164,7 +164,7 @@ export default function AssistantPage() {
         {/* Input Area */}
         <div className="p-4 bg-[#111113]/50 border-t border-white/5 backdrop-blur-xl">
           <form 
-            onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
+            onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleSend(input); }}
             className="flex gap-3 max-w-4xl mx-auto items-center"
           >
             <div className="flex-1 relative group">
@@ -174,7 +174,7 @@ export default function AssistantPage() {
                 placeholder="Ask your career co-pilot anything..."
                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
               />
             </div>
             <button 

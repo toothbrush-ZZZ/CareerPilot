@@ -5,6 +5,7 @@ services:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
+    restart: always
     ports:
       - "3000:3000"
     env_file:
@@ -16,6 +17,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    restart: always
     ports:
       - "8000:8000"
     env_file:
@@ -31,6 +33,7 @@ services:
     build:
       context: ./embed
       dockerfile: Dockerfile
+    restart: always
     ports:
       - "8001:8001"
     volumes:
@@ -40,6 +43,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: always
     ports:
       - "6379:6379"
     command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
@@ -50,6 +54,7 @@ services:
 
   db:
     image: ankane/pgvector
+    restart: always
     ports:
       - "5432:5432"
     environment:

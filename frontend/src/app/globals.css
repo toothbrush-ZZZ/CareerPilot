@@ -1,12 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-[#0a0a0b] text-white;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
+body {
+  background-color: #0a0a0b;
+  color: white;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -34,5 +30,8 @@
 }
 
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, white, white, rgba(255, 255, 255, 0.5));
 }

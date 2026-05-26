@@ -27,11 +27,11 @@ import {
 } from 'recharts';
 
 interface Stats {
-  total_applications: int;
-  this_week: int;
+  total_applications: number;
+  this_week: number;
   by_status: Record<string, number>;
-  goals_completed: int;
-  goals_total: int;
+  goals_completed: number;
+  goals_total: number;
   nudges: string[];
 }
 

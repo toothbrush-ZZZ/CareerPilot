@@ -137,7 +137,7 @@ export default function CVPage() {
               id="cv-upload" 
               className="hidden" 
               accept=".pdf,.docx"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFile(e.target.files?.[0] || null)}
             />
             
             {file ? (
@@ -177,10 +177,10 @@ export default function CVPage() {
             <div className="glass rounded-3xl p-8">
               <h3 className="text-xl font-bold mb-8">Personal Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Full Name" value={buildData.personal.name} onChange={(v) => setBuildData({...buildData, personal: {...buildData.personal, name: v}})} />
-                <InputGroup label="Email" value={buildData.personal.email} onChange={(v) => setBuildData({...buildData, personal: {...buildData.personal, email: v}})} />
-                <InputGroup label="Phone" value={buildData.personal.phone} onChange={(v) => setBuildData({...buildData, personal: {...buildData.personal, phone: v}})} />
-                <InputGroup label="Location" value={buildData.personal.location} onChange={(v) => setBuildData({...buildData, personal: {...buildData.personal, location: v}})} />
+                <InputGroup label="Full Name" value={buildData.personal.name} onChange={(v: string) => setBuildData({...buildData, personal: {...buildData.personal, name: v}})} />
+                <InputGroup label="Email" value={buildData.personal.email} onChange={(v: string) => setBuildData({...buildData, personal: {...buildData.personal, email: v}})} />
+                <InputGroup label="Phone" value={buildData.personal.phone} onChange={(v: string) => setBuildData({...buildData, personal: {...buildData.personal, phone: v}})} />
+                <InputGroup label="Location" value={buildData.personal.location} onChange={(v: string) => setBuildData({...buildData, personal: {...buildData.personal, location: v}})} />
               </div>
             </div>
             
