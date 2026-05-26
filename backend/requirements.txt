@@ -18,3 +18,5 @@ beautifulsoup4
 duckduckgo-search
 passlib[bcrypt]
 numpy
+python-jobspy
+pandas

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+from datetime import datetime
 from typing import List, Dict, Optional
 from urllib.parse import quote_plus, urljoin
 
@@ -12,7 +13,7 @@ from app.utils.text import clean_text
 
 logger = logging.getLogger(__name__)
 
-BDJOBS_BASE_URL = "https://www.bdjobs.com"
+BDJOBS_BASE_URL = "https://bdjobs.com"
 
 
 class JobScraper:
@@ -113,11 +114,12 @@ class JobScraper:
         try:
             search_query = f"{query} {location}".strip()
 
-            encoded_query = quote_plus(search_query)
+            encoded_query = quote_plus(query)
 
             url = (
-                f"{BDJOBS_BASE_URL}/jobsearch.asp"
-                f"?freetext={encoded_query}"
+                f"{BDJOBS_BASE_URL}/h/jobs"
+                f"?txtsearch={encoded_query}"
+                f"&LocationId={quote_plus(location)}"
             )
 
             logger.info(f"Searching BDJobs: {url}")
@@ -136,9 +138,9 @@ class JobScraper:
                 f"Page title: {soup.title.string if soup.title else 'No title'}"
             )
 
-            # Updated selectors
+            # Updated selectors for new BdJobs (Angular/Tailwind)
             cards = soup.select(
-                ".job-item-wrap, .job-item, .srch-result-wrap"
+                'a.group[href*="/h/details/"]'
             )
 
             logger.info(
@@ -169,7 +171,7 @@ class JobScraper:
                         continue
 
                     title = clean_text(
-                        title_el.get_text(strip=True)
+                        title_el.get_text(separator=" ", strip=True)
                     )
 
                     href = title_el.get("href", "").strip()
@@ -186,46 +188,29 @@ class JobScraper:
                             href
                         )
 
-                    company_el = (
-                        card.select_one(".comp-name")
-                        or card.select_one(".company-name")
-                        or card.select_one(".company")
-                    )
+                    # Structural parsing for the new design
+                    # Title is in the first p tag, Company in the second p tag
+                    p_tags = card.find_all("p", limit=10)
+                    
+                    company = "Unknown Company"
+                    job_location = location or "Bangladesh"
+                    deadline = "Not specified"
 
-                    location_el = (
-                        card.select_one(".locon")
-                        or card.select_one(".location")
-                        or card.select_one(".job-location")
-                    )
+                    if len(p_tags) >= 2:
+                        company = clean_text(p_tags[1].get_text(strip=True))
 
-                    deadline_el = (
-                        card.select_one(".dead-text")
-                        or card.select_one(".deadline")
-                    )
-
-                    company = (
-                        clean_text(
-                            company_el.get_text(strip=True)
-                        )
-                        if company_el
-                        else "Unknown Company"
-                    )
-
-                    job_location = (
-                        clean_text(
-                            location_el.get_text(strip=True)
-                        )
-                        if location_el
-                        else location or "Bangladesh"
-                    )
-
-                    deadline = (
-                        clean_text(
-                            deadline_el.get_text(strip=True)
-                        )
-                        if deadline_el
-                        else "Not specified"
-                    )
+                    # Location usually has a marker or is in a specific div
+                    # We can look for text that looks like a location or contains common cities
+                    for p in p_tags:
+                        p_text = p.get_text(strip=True)
+                        if any(city in p_text for city in ["Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"]):
+                            job_location = clean_text(p_text)
+                            break
+                    
+                    # Deadline is often in a span with "Deadline:"
+                    deadline_el = card.find(lambda t: t.name in ["span", "p"] and "Deadline:" in t.get_text())
+                    if deadline_el:
+                        deadline = clean_text(deadline_el.get_text().replace("Deadline:", "").strip())
 
                     description = (
                         f"{title} at {company} "
@@ -260,6 +245,107 @@ class JobScraper:
             logger.error(f"BDJobs scraping failed: {e}")
             return []
 
+
+    async def scrape_jobspy(
+        self,
+        query: str,
+        location: str = "Bangladesh"
+    ) -> List[Dict]:
+        """
+        Scrape jobs using JobSpy (LinkedIn, Indeed, Glassdoor).
+        """
+        try:
+            from jobspy import scrape_jobs
+            import pandas as pd
+
+            logger.info(f"Searching JobSpy: {query} in {location}")
+
+            # JobSpy is synchronous, run in thread
+            def _scrape():
+                try:
+                    # Glassdoor often fails for specific countries in JobSpy
+                    sites = ["indeed", "linkedin"]
+                    
+                    return scrape_jobs(
+                        site_name=sites,
+                        search_term=query,
+                        location=location,
+                        results_wanted=15,
+                        country_indeed="bangladesh" if "bangladesh" in location.lower() or not location else None,
+                    )
+                except Exception as e:
+                    logger.error(f"JobSpy scrape_jobs call failed: {e}")
+                    # Try a fallback with just linkedin which is more global
+                    try:
+                        return scrape_jobs(
+                            site_name=["linkedin"],
+                            search_term=query,
+                            location=location,
+                            results_wanted=10,
+                        )
+                    except:
+                        return pd.DataFrame()
+
+            df = await asyncio.to_thread(_scrape)
+
+            if df is None or df.empty:
+                logger.warning("JobSpy returned no results")
+                return []
+
+            jobs = []
+            for _, row in df.iterrows():
+                try:
+                    title = str(row.get("title", "Unknown Role"))
+                    company = str(row.get("company", "Unknown Company"))
+                    job_url = str(row.get("job_url", ""))
+                    loc = str(row.get("location", location))
+                    
+                    if not job_url:
+                        continue
+
+                    # Handle salary
+                    salary = "Negotiable"
+                    min_amount = row.get("min_amount")
+                    max_amount = row.get("max_amount")
+                    currency = row.get("currency", "")
+                    
+                    if pd.notna(min_amount) and pd.notna(max_amount):
+                        salary = f"{min_amount} - {max_amount} {currency}"
+                    elif pd.notna(min_amount):
+                        salary = f"{min_amount} {currency}"
+
+                    # Description
+                    desc = str(row.get("description", ""))
+                    if not desc or desc == "nan":
+                        desc = f"{title} at {company} in {loc}."
+
+                    # Post date
+                    date_posted = row.get("date_posted")
+                    deadline = "Not specified"
+                    if pd.notna(date_posted):
+                        deadline = f"Posted: {date_posted}"
+
+                    jobs.append({
+                        "role": title,
+                        "company": company,
+                        "salary_range": salary,
+                        "deadline": deadline,
+                        "location": loc,
+                        "job_url": job_url,
+                        "job_type": str(row.get("job_type", "onsite")),
+                        "source": str(row.get("site", "JobSpy")).capitalize(),
+                        "description": desc[:1500]
+                    })
+                except Exception as e:
+                    logger.error(f"Error parsing JobSpy row: {e}")
+
+            logger.info(f"JobSpy returned {len(jobs)} jobs")
+            return jobs
+
+        except Exception as e:
+            logger.error(f"scrape_jobspy failed: {e}")
+            return []
+
     async def ddg_search_jobs(
         self,
         query: str,
@@ -271,7 +357,7 @@ class JobScraper:
 
         try:
             search_query = (
-                f"{query} jobs {location} Bangladesh"
+                f"{query} {location} jobs"
             ).strip()
 
             logger.info(f"DDG search: {search_query}")
@@ -286,12 +372,22 @@ class JobScraper:
                     )
 
             results = await asyncio.to_thread(_search)
+            logger.info(f"DDG raw results count: {len(results)}")
+            for r in results[:5]:
+                logger.info(f"DDG result URL: {r.get('href')}")
 
             valid_domains = [
                 "bdjobs.com",
                 "linkedin.com",
                 "indeed.com",
                 "glassdoor.com",
+                "careerjet.com",
+                "monster.com",
+                "careerbuilder.com",
+                "simplyhired.com",
+                "facebook.com",
+                "jobs.com.bd",
+                "chakri.com",
             ]
 
             jobs = []
@@ -448,20 +544,26 @@ class JobScraper:
                 location
             )
 
+            jobspy_task = self.scrape_jobspy(
+                query,
+                location or "Bangladesh"
+            )
+
             ddg_task = self.ddg_search_jobs(
                 query,
                 location
             )
 
-            bdjobs_results, ddg_results = (
+            bdjobs_results, jobspy_results, ddg_results = (
                 await asyncio.gather(
                     bdjobs_task,
+                    jobspy_task,
                     ddg_task
                 )
             )
 
             combined = (
-                bdjobs_results + ddg_results
+                bdjobs_results + jobspy_results + ddg_results
             )
 
             unique_jobs = []
