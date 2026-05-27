@@ -6,7 +6,7 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-engine = create_async_engine(settings.POSTGRES_URL, echo=False)
+engine = create_async_engine(str(settings.POSTGRES_URL), echo=False)
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, 
     class_=AsyncSession, 
