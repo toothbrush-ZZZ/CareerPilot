@@ -39,3 +39,5 @@ backend/test_*.py
 backend/smoke_test.py
 test_ollama.py
 test_ollama_chat.py
+user_data_guide.md
+
