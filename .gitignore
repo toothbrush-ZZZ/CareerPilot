@@ -41,3 +41,8 @@ test_ollama.py
 test_ollama_chat.py
 user_data_guide.md
 
+JUDGE_SETUP_PRIVATE.md
+*.pem
+*.key
+
+
