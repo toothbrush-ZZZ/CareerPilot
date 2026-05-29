@@ -3,7 +3,8 @@ import json
 from typing import List, Dict, Optional
 from app.core.config import get_settings
 from app.core import groq
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import asyncio
 
 import logging
@@ -16,15 +17,28 @@ async def call_gemini(messages: List[Dict[str, str]], system_instruction: str) -
     if not settings.GEMINI_API_KEY:
         return None
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=system_instruction)
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
         
         history = []
         for msg in messages[:-1]:
-            history.append({"role": "user" if msg["role"] == "user" else "model", "parts": [msg["content"]]})
+            role = "user" if msg["role"] == "user" else "model"
+            history.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part.from_text(text=msg["content"])]
+                )
+            )
             
-        chat_session = model.start_chat(history=history or None)
-        response = await asyncio.to_thread(chat_session.send_message, messages[-1]["content"])
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction
+        )
+        
+        chat = client.chats.create(
+            model="gemini-1.5-flash",
+            history=history or None,
+            config=config
+        )
+        response = await asyncio.to_thread(chat.send_message, messages[-1]["content"])
         return response.text
     except Exception as e:
         logger.error(f"Gemini error: {e}")

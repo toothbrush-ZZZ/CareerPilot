@@ -13,7 +13,7 @@ python-docx
 asyncpg
 sqlalchemy[asyncio]
 groq
-google-generativeai
+google-genai
 beautifulsoup4
 duckduckgo-search
 passlib[bcrypt]

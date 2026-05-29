@@ -4,7 +4,7 @@ from app.schemas.all import ChatRequest, ChatResponse, ChatMessage
 from app.services import cv_service
 from app.core import redis, groq
 from app.core.config import get_settings
-import google.generativeai as genai
+from google import genai
 import json
 from typing import List, Dict
 import logging
