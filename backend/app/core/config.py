@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # Ollama (local/free AI)
     OLLAMA_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3:8b"
+    OLLAMA_MODEL: str = "llama3.2:latest"
 
     model_config = SettingsConfigDict(
         env_file="../.env",

@@ -34,7 +34,7 @@ EMBED_URL=http://localhost:8001
 
 # AI Fallback (If no Groq/Gemini keys)
 OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3:8b
+OLLAMA_MODEL=llama3.2:latest
 ```
 
 ### 3. Start Infrastructure
