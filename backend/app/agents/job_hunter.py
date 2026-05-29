@@ -50,7 +50,8 @@ class JobHunterAgent:
         search_tasks = [
             self.remotive.search(search_query, limit=10),
             self.arbeitnow.search(search_query, location=location, limit=10),
-            self.scraper.scrape_bdjobs(search_query, location=location)
+            self.scraper.scrape_bdjobs(search_query, location=location),
+            self.scraper.scrape_jobspy(search_query, location=location)
         ]
         
         results = await asyncio.gather(*search_tasks, return_exceptions=True)

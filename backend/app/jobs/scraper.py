@@ -76,7 +76,6 @@ class JobScraper:
 
                     html = response.text
 
-                    # Cloudflare / block detection
                     lower_html = html.lower()
 
                     if (
@@ -138,7 +137,6 @@ class JobScraper:
                 f"Page title: {soup.title.string if soup.title else 'No title'}"
             )
 
-            # Updated selectors for new BdJobs (Angular/Tailwind)
             cards = soup.select(
                 'a.group[href*="/h/details/"]'
             )
@@ -152,7 +150,6 @@ class JobScraper:
                     "No job cards found. HTML structure may have changed."
                 )
 
-                # DEBUG SAVE
                 with open("bdjobs_debug.html", "w", encoding="utf-8") as f:
                     f.write(html)
 
@@ -188,8 +185,6 @@ class JobScraper:
                             href
                         )
 
-                    # Structural parsing for the new design
-                    # Title is in the first p tag, Company in the second p tag
                     p_tags = card.find_all("p", limit=10)
                     
                     company = "Unknown Company"
@@ -199,15 +194,12 @@ class JobScraper:
                     if len(p_tags) >= 2:
                         company = clean_text(p_tags[1].get_text(strip=True))
 
-                    # Location usually has a marker or is in a specific div
-                    # We can look for text that looks like a location or contains common cities
                     for p in p_tags:
                         p_text = p.get_text(strip=True)
                         if any(city in p_text for city in ["Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh"]):
                             job_location = clean_text(p_text)
                             break
                     
-                    # Deadline is often in a span with "Deadline:"
                     deadline_el = card.find(lambda t: t.name in ["span", "p"] and "Deadline:" in t.get_text())
                     if deadline_el:
                         deadline = clean_text(deadline_el.get_text().replace("Deadline:", "").strip())
@@ -258,24 +250,26 @@ class JobScraper:
             from jobspy import scrape_jobs
             import pandas as pd
 
-            logger.info(f"Searching JobSpy: {query} in {location}")
+            if not location:
+                location = "Bangladesh"
 
-            # JobSpy is synchronous, run in thread
+            logger.info(f"Searching JobSpy: {query} in {location}")
             def _scrape():
                 try:
-                    # Glassdoor often fails for specific countries in JobSpy
                     sites = ["indeed", "linkedin"]
+                    
+                    loc_lower = location.lower() if location else ""
+                    is_bd = any(c in loc_lower for c in ["bangladesh", "dhaka", "chittagong", "sylhet", "rajshahi", "khulna", "barisal", "rangpur", "mymensingh"]) or not location
                     
                     return scrape_jobs(
                         site_name=sites,
                         search_term=query,
                         location=location,
                         results_wanted=15,
-                        country_indeed="bangladesh" if "bangladesh" in location.lower() or not location else None,
+                        country_indeed="bangladesh" if is_bd else None,
                     )
                 except Exception as e:
                     logger.error(f"JobSpy scrape_jobs call failed: {e}")
-                    # Try a fallback with just linkedin which is more global
                     try:
                         return scrape_jobs(
                             site_name=["linkedin"],
@@ -303,7 +297,6 @@ class JobScraper:
                     if not job_url:
                         continue
 
-                    # Handle salary
                     salary = "Negotiable"
                     min_amount = row.get("min_amount")
                     max_amount = row.get("max_amount")
@@ -314,12 +307,9 @@ class JobScraper:
                     elif pd.notna(min_amount):
                         salary = f"{min_amount} {currency}"
 
-                    # Description
                     desc = str(row.get("description", ""))
                     if not desc or desc == "nan":
                         desc = f"{title} at {company} in {loc}."
-
-                    # Post date
                     date_posted = row.get("date_posted")
                     deadline = "Not specified"
                     if pd.notna(date_posted):
@@ -470,7 +460,6 @@ class JobScraper:
 
             soup = BeautifulSoup(html, "lxml")
 
-            # Remove junk tags
             for tag in soup([
                 "script",
                 "style",
@@ -515,7 +504,6 @@ class JobScraper:
                 )
             )
 
-            # Cleanup whitespace
             text = re.sub(r"\s+", " ", text)
 
             if len(text) < 100:
