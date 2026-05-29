@@ -19,10 +19,7 @@ export default function SignupPage() {
     setError('');
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error('API URL not configured');
-      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
       
       const response = await axios.post(`${apiUrl}/auth/signup`, {
         email,

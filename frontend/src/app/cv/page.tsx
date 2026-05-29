@@ -95,7 +95,7 @@ export default function CVPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {status.sections.map((s: string) => (
+            {status.sections?.map((s: string) => (
               <span key={s} className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-green-500/10 text-green-400/70 border border-green-500/10">
                 {s}
               </span>

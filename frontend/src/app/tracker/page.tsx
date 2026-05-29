@@ -7,11 +7,13 @@ import {
   CheckCircle2, 
   Circle, 
   MoreVertical, 
-  GripVertical, 
   Search, 
   Plus, 
   ExternalLink,
-  Loader2
+  Loader2,
+  X,
+  Trash2,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -30,22 +32,44 @@ export default function TrackerPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'kanban' | 'goals' | 'calendar'>('kanban');
 
+  // Modals state
+  const [showAddJobModal, setShowAddJobModal] = useState(false);
+  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
+  
+  // New Job state
+  const [newJobTitle, setNewJobTitle] = useState('');
+  const [newJobCompany, setNewJobCompany] = useState('');
+  const [newJobLocation, setNewJobLocation] = useState('');
+  const [newJobUrl, setNewJobUrl] = useState('');
+  const [newJobStatus, setNewJobStatus] = useState('applied');
+  const [newJobNotes, setNewJobNotes] = useState('');
+  const [submittingJob, setSubmittingJob] = useState(false);
+
+  // New Goal state
+  const [newGoalText, setNewGoalText] = useState('');
+  const [newGoalDueDate, setNewGoalDueDate] = useState('');
+  const [submittingGoal, setSubmittingGoal] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [appRes, goalRes] = await Promise.all([
+        careerApi.getApplications(),
+        careerApi.getGoals()
+      ]);
+      setApplications(appRes.data);
+      setGoals(goalRes.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [appRes, goalRes] = await Promise.all([
-          careerApi.getApplications(),
-          careerApi.getGoals()
-        ]);
-        setApplications(appRes.data);
-        setGoals(goalRes.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    const initData = async () => {
+      setLoading(true);
+      await fetchData();
+      setLoading(false);
     };
-    fetchData();
+    initData();
   }, []);
 
   const updateStatus = async (appId: string, newStatus: string) => {
@@ -57,12 +81,78 @@ export default function TrackerPage() {
     }
   };
 
+  const deleteApplication = async (appId: string) => {
+    if (!confirm("Are you sure you want to delete this job application?")) return;
+    try {
+      await careerApi.deleteApplication(appId);
+      setApplications(apps => apps.filter(a => a.id !== appId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const toggleGoal = async (goalId: string) => {
     try {
       await careerApi.toggleGoal(goalId);
       setGoals(gs => gs.map(g => g.id === goalId ? { ...g, completed: !g.completed } : g));
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleAddJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobTitle || !newJobCompany) return;
+
+    setSubmittingJob(true);
+    try {
+      await careerApi.createApplication({
+        job_title: newJobTitle,
+        company: newJobCompany,
+        location: newJobLocation || 'Remote',
+        job_url: newJobUrl || '',
+        status: newJobStatus,
+        notes: newJobNotes || ''
+      });
+      
+      // Reset form
+      setNewJobTitle('');
+      setNewJobCompany('');
+      setNewJobLocation('');
+      setNewJobUrl('');
+      setNewJobStatus('applied');
+      setNewJobNotes('');
+      setShowAddJobModal(false);
+      
+      // Refresh list
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to create application", err);
+    } finally {
+      setSubmittingJob(false);
+    }
+  };
+
+  const handleAddGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoalText.trim()) return;
+
+    setSubmittingGoal(true);
+    try {
+      await careerApi.createGoal({
+        text: newGoalText,
+        due_date: newGoalDueDate ? newGoalDueDate : null
+      });
+
+      setNewGoalText('');
+      setNewGoalDueDate('');
+      setShowAddGoalModal(false);
+
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to create goal", err);
+    } finally {
+      setSubmittingGoal(false);
     }
   };
 
@@ -89,7 +179,8 @@ export default function TrackerPage() {
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto relative">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gradient">Productivity Tracker</h1>
@@ -153,10 +244,14 @@ export default function TrackerPage() {
                       key={app.id} 
                       app={app} 
                       onStatusChange={(status: string) => updateStatus(app.id, status)} 
+                      onDelete={() => deleteApplication(app.id)}
                     />
                   ))}
                   {col.id === 'applied' && (
-                    <button className="w-full py-4 border border-dashed border-white/10 rounded-2xl text-white/20 hover:text-white/40 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => { setNewJobStatus('applied'); setShowAddJobModal(true); }}
+                      className="w-full py-4 border border-dashed border-white/10 rounded-2xl text-white/20 hover:text-white/40 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                    >
                       <Plus size={16} />
                       <span className="text-sm font-medium">Add Job</span>
                     </button>
@@ -177,8 +272,8 @@ export default function TrackerPage() {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="glass rounded-2xl p-6">
                 <h4 className="text-sm font-bold uppercase tracking-widest text-white/30 mb-4">Upcoming Deadlines</h4>
-                <div className="space-y-4">
-                  {deadlines.length > 0 ? deadlines.slice(0, 5).map((d, i) => (
+                <div className="space-y-4 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
+                  {deadlines.length > 0 ? deadlines.slice(0, 8).map((d, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className={cn("w-2 h-2 rounded-full", d.color)}></div>
                       <div className="flex flex-col">
@@ -208,7 +303,10 @@ export default function TrackerPage() {
             <div className="glass rounded-[2rem] p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold">Your Career Goals</h3>
-                <button className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-all">
+                <button 
+                  onClick={() => setShowAddGoalModal(true)}
+                  className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-all flex items-center justify-center"
+                >
                   <Plus size={20} />
                 </button>
               </div>
@@ -252,11 +350,168 @@ export default function TrackerPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Add Job Modal */}
+      <AnimatePresence>
+        {showAddJobModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddJobModal(false)} />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass max-w-md w-full rounded-[2rem] p-8 space-y-6 relative z-10"
+            >
+              <button onClick={() => setShowAddJobModal(false)} className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
+              
+              <h3 className="text-xl font-bold text-gradient">Track New Application</h3>
+              
+              <form onSubmit={handleAddJob} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Job Title *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newJobTitle} 
+                    onChange={e => setNewJobTitle(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                    placeholder="e.g. React Developer"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Company *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newJobCompany} 
+                    onChange={e => setNewJobCompany(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                    placeholder="e.g. Acme Corp"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Location</label>
+                    <input 
+                      type="text" 
+                      value={newJobLocation} 
+                      onChange={e => setNewJobLocation(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                      placeholder="e.g. Remote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Pipeline Stage</label>
+                    <select 
+                      value={newJobStatus} 
+                      onChange={e => setNewJobStatus(e.target.value)}
+                      className="w-full bg-[#161618] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                    >
+                      <option value="applied">Applied</option>
+                      <option value="interviewing">Interviewing</option>
+                      <option value="offer">Offer</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Job Post URL</label>
+                  <input 
+                    type="url" 
+                    value={newJobUrl} 
+                    onChange={e => setNewJobUrl(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Notes / Cover Letter Snippet</label>
+                  <textarea 
+                    value={newJobNotes} 
+                    onChange={e => setNewJobNotes(e.target.value)}
+                    className="w-full min-h-[80px] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white custom-scrollbar"
+                    placeholder="Draft letter, salary details, interview prep notes..."
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={submittingJob}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 mt-2"
+                >
+                  {submittingJob ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                  Add to Tracker
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Goal Modal */}
+      <AnimatePresence>
+        {showAddGoalModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddGoalModal(false)} />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass max-w-sm w-full rounded-[2rem] p-8 space-y-6 relative z-10"
+            >
+              <button onClick={() => setShowAddGoalModal(false)} className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 text-white/40 hover:text-white">
+                <X size={18} />
+              </button>
+              
+              <h3 className="text-xl font-bold text-gradient">Set Career Goal</h3>
+              
+              <form onSubmit={handleAddGoal} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">What do you want to achieve? *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newGoalText} 
+                    onChange={e => setNewGoalText(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                    placeholder="e.g. Finish React roadmap"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block mb-1">Target Due Date</label>
+                  <input 
+                    type="date" 
+                    value={newGoalDueDate} 
+                    onChange={e => setNewGoalDueDate(e.target.value)}
+                    className="w-full bg-[#161618] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/50 text-white"
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={submittingGoal}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/10 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 mt-2"
+                >
+                  {submittingGoal ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                  Create Goal
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function ApplicationCard({ app, onStatusChange }: any) {
+function ApplicationCard({ app, onStatusChange, onDelete }: any) {
   const [showOptions, setShowOptions] = useState(false);
 
   return (
@@ -277,11 +532,13 @@ function ApplicationCard({ app, onStatusChange }: any) {
           <CalendarIcon size={10} />
           <span>{new Date(app.applied_at).toLocaleDateString()}</span>
         </div>
-        {app.job_url && (
-          <a href={app.job_url} target="_blank" className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
-            <ExternalLink size={12} />
-          </a>
-        )}
+        <div className="flex gap-1">
+          {app.job_url && (
+            <a href={app.job_url} target="_blank" className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-blue-400 hover:bg-blue-400/10 transition-all">
+              <ExternalLink size={12} />
+            </a>
+          )}
+        </div>
       </div>
 
       {showOptions && (
@@ -299,7 +556,11 @@ function ApplicationCard({ app, onStatusChange }: any) {
               {col.title}
             </button>
           ))}
-          <button className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:bg-red-400/10 transition-colors mt-1 border-t border-white/5 pt-2">
+          <button 
+            onClick={() => { onDelete(); setShowOptions(false); }}
+            className="w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:bg-red-400/10 transition-colors mt-1 border-t border-white/5 pt-2 flex items-center gap-1.5"
+          >
+            <Trash2 size={12} />
             Delete
           </button>
         </div>

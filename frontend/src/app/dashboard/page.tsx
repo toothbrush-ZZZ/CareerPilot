@@ -27,6 +27,8 @@ import {
   Cell
 } from 'recharts';
 
+import { useRouter } from 'next/navigation';
+
 interface Stats {
   total_applications: number;
   this_week: number;
@@ -37,6 +39,7 @@ interface Stats {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -79,10 +82,16 @@ export default function DashboardPage() {
           <p className="text-white/50 mt-1">Welcome back. Here&apos;s your career progress at a glance.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 rounded-xl glass hover:bg-white/5 transition-all text-sm font-medium">
+          <button 
+            onClick={() => router.push('/jobs')}
+            className="px-4 py-2 rounded-xl glass hover:bg-white/5 transition-all text-sm font-medium"
+          >
             Search Jobs
           </button>
-          <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all text-sm font-medium flex items-center gap-2">
+          <button 
+            onClick={() => router.push('/tracker')}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition-all text-sm font-medium flex items-center gap-2"
+          >
             <Plus size={16} />
             New Application
           </button>

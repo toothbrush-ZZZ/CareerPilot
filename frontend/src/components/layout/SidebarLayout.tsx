@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Search, 
-  MessageSquare, 
-  CheckSquare, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Search,
+  MessageSquare,
+  CheckSquare,
+  FileText,
   User,
   LogOut,
   ChevronLeft,
@@ -33,9 +33,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/';
-  
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_id');
@@ -61,7 +61,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       {/* Mobile Overlay */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -85,7 +85,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               <span className="text-xl font-bold tracking-tighter">CP</span>
             </div>
             {!collapsed && (
-              <motion.span 
+              <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70"
@@ -105,8 +105,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
-                  isActive 
-                    ? "bg-blue-600/10 text-blue-400" 
+                  isActive
+                    ? "bg-blue-600/10 text-blue-400"
                     : "text-white/50 hover:bg-white/5 hover:text-white"
                 )}
               >
@@ -115,7 +115,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   <span className="font-medium">{item.name}</span>
                 )}
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="active-pill"
                     className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full"
                   />
@@ -126,7 +126,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center w-full gap-3 px-3 py-3 transition-colors rounded-xl text-white/50 hover:bg-white/5 hover:text-white"
           >
@@ -136,7 +136,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Collapse toggle (desktop) */}
-        <button 
+        <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-20 hidden lg:flex items-center justify-center w-6 h-6 rounded-full bg-[#111113] border border-white/10 text-white/50 hover:text-white transition-colors"
         >

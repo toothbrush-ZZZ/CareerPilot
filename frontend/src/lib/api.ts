@@ -70,10 +70,14 @@ export const careerApi = {
   deleteApplication: (id: string) => api.delete(`/tracker/applications/${id}`),
   
   getGoals: () => api.get('/tracker/goals'),
+  createGoal: (data: any) => api.post('/tracker/goals', data),
   updateGoal: (id: string, data: any) => api.patch(`/tracker/goals/${id}`, data),
-  toggleGoal: (id: string) => api.post(`/tracker/goals/${id}/toggle`),
+  toggleGoal: (id: string) => api.patch(`/tracker/goals/${id}/toggle`),
   
   getStats: () => api.get('/dashboard/stats'),
+  
+  generateCoverLetter: (data: any) => api.post('/cover-letter/generate', data),
+  refineCoverLetter: (data: any) => api.post('/cover-letter/refine', data),
   
   signup: (data: any) => api.post('/auth/signup', data),
   login: (data: any) => api.post('/auth/login', data),
