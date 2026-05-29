@@ -77,18 +77,26 @@ async def call_ollama(messages: List[Dict[str, str]], system_prompt: str) -> Opt
 
 async def get_ai_response(messages: List[Dict[str, str]], system_prompt: str) -> str:
     """
-    Tries AI providers in order: Ollama -> Groq -> Gemini -> Error
+    Tries AI providers in order of configuration/availability:
+    If API keys are provided: Groq -> Gemini -> Ollama
+    If no keys: Ollama
     """
-    # 1. Try Ollama (Local/Free/Primary)
+    if settings.GROQ_API_KEY:
+        response = await call_groq(messages, system_prompt)
+        if response: return response
+        
+    if settings.GEMINI_API_KEY:
+        response = await call_gemini(messages, system_prompt)
+        if response: return response
+        
     response = await call_ollama(messages, system_prompt)
     if response: return response
     
-    # 2. Try Groq (Fastest)
-    response = await call_groq(messages, system_prompt)
-    if response: return response
-    
-    # 3. Try Gemini (High quality)
-    response = await call_gemini(messages, system_prompt)
-    if response: return response
-    
+    if not settings.GROQ_API_KEY:
+        response = await call_groq(messages, system_prompt)
+        if response: return response
+    if not settings.GEMINI_API_KEY:
+        response = await call_gemini(messages, system_prompt)
+        if response: return response
+        
     return "I'm sorry, I'm having trouble connecting to my AI engines. Please check your API keys or Ollama status."

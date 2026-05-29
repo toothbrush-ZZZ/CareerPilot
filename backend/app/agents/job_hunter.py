@@ -105,7 +105,7 @@ class JobHunterAgent:
         return response_data
 
     async def _parse_query(self, query: str) -> Dict:
-        from app.services.llm_factory import call_ollama
+        from app.services.llm_factory import get_ai_response
         import json
         
         system_prompt = """
@@ -115,7 +115,7 @@ class JobHunterAgent:
         Example: "Remote Python Developer" -> {"role": "Python Developer", "location": null, "work_type": "remote"}
         """
         
-        response = await call_ollama([{"role": "user", "content": query}], system_prompt)
+        response = await get_ai_response([{"role": "user", "content": query}], system_prompt)
         if not response:
             return {"role": query, "location": None, "work_type": "any"}
         try:

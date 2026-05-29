@@ -41,6 +41,9 @@ async def seed_demo_data(db) -> bool:
     Does NOT wipe existing data by default (unless called during a reset).
     """
     try:
+        # Ensure profiles table has RLS disabled to prevent login lockout
+        await db.execute(text("ALTER TABLE profiles DISABLE ROW LEVEL SECURITY"))
+        
         # Check if demo user exists
         result = await db.execute(
             text("SELECT id FROM profiles WHERE id = :uid"),

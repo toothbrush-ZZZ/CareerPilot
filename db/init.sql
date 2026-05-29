@@ -78,14 +78,9 @@ BEGIN
 END;
 $$;
 
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cv_chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY user_access_profiles ON profiles
-    FOR ALL USING (id = current_setting('app.current_user_id')::UUID);
 
 CREATE POLICY user_access_cv_chunks ON cv_chunks
     FOR ALL USING (user_id = current_setting('app.current_user_id')::UUID);

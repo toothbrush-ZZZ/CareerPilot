@@ -131,7 +131,7 @@ class JobScraper:
                 )
                 return []
 
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, "html.parser")
 
             logger.info(
                 f"Page title: {soup.title.string if soup.title else 'No title'}"
@@ -458,7 +458,7 @@ class JobScraper:
             if not html:
                 return ""
 
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, "html.parser")
 
             for tag in soup([
                 "script",

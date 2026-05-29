@@ -76,6 +76,18 @@ async def process_and_store_cv(
         "extracted_location": location
     }
 
+def parse_vector(val) -> list:
+    if val is None:
+        return []
+    if isinstance(val, str):
+        val = val.strip('[]{}')
+        return [float(x) for x in val.split(',')] if val else []
+    if isinstance(val, (list, tuple)):
+        return list(val)
+    if hasattr(val, 'tolist'):
+        return val.tolist()
+    return list(val)
+
 async def get_cv_chunks(user_id: str, db) -> List[Dict]:
     redis = await get_redis()
     cache_key = cache_key_embed(user_id)
@@ -89,9 +101,9 @@ async def get_cv_chunks(user_id: str, db) -> List[Dict]:
         {"uid": user_id}
     )
     chunks = result.mappings().all()
-    serializable_chunks = [{"section": c.section, "content": c.content, "embedding": list(c.embedding)} for c in chunks]
+    serializable_chunks = [{"section": c["section"], "content": c["content"], "embedding": parse_vector(c["embedding"])} for c in chunks]
     
-    await redis.set_json(cache_key, serializable_chunks, ttl=7200) # 2 hours
+    await redis.set_json(cache_key, serializable_chunks, ttl=7200)
     return serializable_chunks
 
 async def search_cv(query: str, user_id: str, db, limit: int = 5) -> List[Dict]:
