@@ -24,17 +24,13 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 1. Authenticate credentials
       const authData = await authService.login(email, password);
       
-      // 2. Fetch user profile matching the token
-      // Set the token temporarily in store so the getProfile call passes auth
       useAuthStore.setState({ token: authData.access_token });
       const profile = await authService.getProfile();
 
-      // 3. Complete login sequence
       login(authData.access_token, profile);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
     } finally {
@@ -42,7 +38,6 @@ export default function LoginPage() {
     }
   };
 
-  // Preseeded Quick Demo Login Shortcut
   const handleDemoAccess = async () => {
     setIsLoading(true);
     setError('');
@@ -53,12 +48,11 @@ export default function LoginPage() {
 
       const authData = await authService.login(demoEmail, demoPassword);
       
-      // Set temporary token to fetch profile
       useAuthStore.setState({ token: authData.access_token });
       const profile = await authService.getProfile();
 
       login(authData.access_token, profile);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Demo backend is currently offline. Please run docker services.');
     } finally {

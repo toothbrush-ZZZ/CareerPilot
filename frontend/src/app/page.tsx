@@ -33,7 +33,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-white flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[#070a13] text-white flex flex-col relative overflow-y-auto">
       
       {/* Dynamic Glow Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-sky-500/10 blur-[120px] animate-pulse-glow" />

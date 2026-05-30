@@ -8,8 +8,18 @@ interface ChatResponse {
 }
 
 export const assistantService = {
-  chat: async (message: string, sessionId: string): Promise<ChatResponse> => {
-    return api.post<ChatResponse>('/api/v1/assistant/chat', { message, session_id: sessionId });
+  chat: async (
+    message: string,
+    sessionId: string,
+    lastSearchResults?: any[],
+    selectedJob?: any | null
+  ): Promise<ChatResponse> => {
+    return api.post<ChatResponse>('/api/v1/assistant/chat', {
+      message,
+      session_id: sessionId,
+      last_search_results: lastSearchResults,
+      selected_job: selectedJob
+    });
   },
 
   clearSession: async (sessionId: string): Promise<{ status: string }> => {

@@ -25,16 +25,13 @@ export default function SignupPage() {
     setError('');
 
     try {
-      // 1. Perform Signup in FastAPI database
       const authData = await authService.signup(email, password, fullName);
 
-      // 2. Query initial user profile
       useAuthStore.setState({ token: authData.access_token });
       const profile = await authService.getProfile();
 
-      // 3. Authenticate and redirect to dashboard
       login(authData.access_token, profile);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to register account. User may already exist.');
     } finally {

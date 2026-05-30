@@ -1,51 +1,54 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { jobsService } from '@/services/jobs';
+import { useJobStore } from '@/store/useJobStore';
 import { JobItem } from '@/types';
 import {
   Search,
   MapPin,
   Briefcase,
   Sparkles,
-  Percent,
-  HelpCircle,
   Cpu,
   BookOpen,
-  ArrowUpRight,
   ExternalLink,
   ChevronDown,
   ChevronUp,
   RefreshCw,
   SlidersHorizontal,
-  FlameKindling
+  FlameKindling,
+  Mail
 } from 'lucide-react';
 
 export default function JobHunter() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'board' | 'evaluator'>('board');
   
   // Search parameters
   const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
   const [expandedJobIndex, setExpandedJobIndex] = useState<number | null>(null);
 
   // Manual fit form
   const [manualDescription, setManualDescription] = useState('');
   const [manualFitResult, setManualFitResult] = useState<{ score: number; summary: string } | null>(null);
 
+  const { setLastSearchResults, setSelectedJob } = useJobStore();
+
   // Fetch jobs list
   const { data: searchResponse, isLoading: searchLoading, refetch: executeSearch, isRefetching } = useQuery({
-    queryKey: ['job-search', query, location],
-    queryFn: () => jobsService.searchJobs(query, location),
+    queryKey: ['job-search', query],
+    queryFn: () => jobsService.searchJobs(query),
     enabled: false, // only execute on click
   });
 
-  // Fetch pre-saved user location default
-  const { data: userLoc } = useQuery({
-    queryKey: ['user-location'],
-    queryFn: jobsService.getJobsLocation,
-  });
+  // Store results in Zustand store for AI Assistant session reference
+  useEffect(() => {
+    if (searchResponse?.jobs) {
+      setLastSearchResults(searchResponse.jobs);
+    }
+  }, [searchResponse, setLastSearchResults]);
 
   // Manual fit calculation mutation
   const manualFitMutation = useMutation({
@@ -69,14 +72,13 @@ export default function JobHunter() {
     manualFitMutation.mutate(manualDescription);
   };
 
-  const handleUseProfileLocation = () => {
-    if (userLoc?.location && userLoc.location !== 'Not set') {
-      setLocation(userLoc.location);
-    }
-  };
-
   const handleToggleExpand = (index: number) => {
     setExpandedJobIndex(expandedJobIndex === index ? null : index);
+  };
+
+  const handleDraftCoverLetter = (job: JobItem) => {
+    setSelectedJob(job);
+    router.push('/assistant');
   };
 
   const getScoreColor = (percent: number) => {
@@ -141,60 +143,25 @@ export default function JobHunter() {
         <div className="space-y-6">
           
           {/* Query Search Card */}
-          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80">
+          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <form onSubmit={handleSearchSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Keyword */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Job Title / Keyword *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                      <Briefcase className="h-4.5 w-4.5" />
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="e.g. Python Developer, Full Stack Engineer"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Natural Language Job Query *
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <Search className="h-4.5 w-4.5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="e.g. Find me ML internships in Dhaka open this month, remote frontend engineers paying above 80k"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                  />
                 </div>
-
-                {/* Location */}
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Location Override
-                    </label>
-                    {userLoc?.location && userLoc.location !== 'Not set' && (
-                      <button
-                        type="button"
-                        onClick={handleUseProfileLocation}
-                        className="text-[10px] font-bold text-sky-500 hover:underline"
-                      >
-                        Use Profile Default ({userLoc.location})
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                      <MapPin className="h-4.5 w-4.5" />
-                    </span>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="e.g. Remote, San Francisco"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
-                    />
-                  </div>
-                </div>
-
               </div>
 
               {/* Submit */}
@@ -206,11 +173,11 @@ export default function JobHunter() {
                 >
                   {searchLoading || isRefetching ? (
                     <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Querying API & Vector Scoring...
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Extracting Query & AI Scoring...
                     </>
                   ) : (
                     <>
-                      <Search className="h-3.5 w-3.5" /> Scrape & Core Score
+                      <Search className="h-3.5 w-3.5" /> Search Jobs
                     </>
                   )}
                 </button>
@@ -236,17 +203,17 @@ export default function JobHunter() {
 
           {/* Job Items List */}
           {!searchLoading && !isRefetching && jobsList.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in">
               {jobsList.map((job, index) => {
                 const isExpanded = expandedJobIndex === index;
-                const fitPercent = job.fit_percentage || 50;
+                const fitPercent = job.fit_percentage || job.fitScore || 50;
                 const badgeColor = getScoreColor(fitPercent);
                 const barColor = getScoreBgBar(fitPercent);
                 
                 return (
                   <div
                     key={index}
-                    className="bg-white border border-slate-200/80 rounded-2xl p-5 dark:bg-[#0d1527] dark:border-slate-800/80 hover:shadow-md transition-shadow relative overflow-hidden"
+                    className="bg-white border border-slate-200/80 rounded-2xl p-5 dark:bg-[#0d1527] dark:border-slate-800/80 hover:shadow-md transition-all relative overflow-hidden"
                   >
                     
                     {/* Glowing highlight sidebar */}
@@ -260,18 +227,40 @@ export default function JobHunter() {
                           {job.role || job.job_title || 'Unknown Position'}
                         </h3>
                         
-                        <div className="flex flex-wrap items-center gap-3.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                          <span className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-3.5 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                          <span className="flex items-center gap-1 text-slate-650 dark:text-slate-300">
                             <Briefcase className="h-3.5 w-3.5 text-slate-400" /> {job.company}
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-slate-400" /> {job.location}
                           </span>
+                          <span className="flex items-center gap-1">
+                            💵 {job.salary_range || job.salaryRange || 'N/A'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            📅 Deadline: {job.deadline || 'N/A'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            💼 Type: {job.job_type || job.jobType || 'N/A'}
+                          </span>
                         </div>
+
+                        {job.fit_reason && (
+                          <p className="text-[11px] text-indigo-500 dark:text-indigo-400 mt-2 font-bold flex items-center gap-1">
+                            🎯 {job.fit_reason}
+                          </p>
+                        )}
                       </div>
 
-                      {/* AI fit badge */}
-                      <div className="flex items-center gap-3 shrink-0">
+                      {/* AI fit badge and Actions */}
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <button
+                          onClick={() => handleDraftCoverLetter(job)}
+                          className="py-1.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 text-[10px] font-bold text-slate-600 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-850 transition-all flex items-center gap-1 active:scale-95 shadow-sm"
+                        >
+                          <Mail className="h-3.5 w-3.5 text-sky-500" /> Draft Cover Letter
+                        </button>
+
                         <div className={`py-1.5 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1 ${badgeColor}`}>
                           <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                           <span>AI Fit: {fitPercent}%</span>
@@ -302,13 +291,13 @@ export default function JobHunter() {
                           </div>
                         </div>
 
-                        {/* AI Match Summary */}
+                        {/* AI Match Summary with matches vs gaps formatted as whitespace block */}
                         {job.summary && (
                           <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 dark:bg-slate-900/60 dark:border-slate-800 flex items-start gap-2.5">
-                            <Cpu className="h-4.5 w-4.5 text-sky-500 shrink-0 mt-0.5 animate-pulse" />
-                            <div>
-                              <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">AI Alignment Analysis</h4>
-                              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{job.summary}</p>
+                            <Cpu className="h-4.5 w-4.5 text-indigo-500 shrink-0 mt-0.5 animate-pulse" />
+                            <div className="w-full">
+                              <h4 className="font-bold text-slate-850 dark:text-slate-200 mb-1">AI Alignment Analysis</h4>
+                              <p className="text-[11px] leading-relaxed text-slate-650 dark:text-slate-400 whitespace-pre-line font-medium">{job.summary}</p>
                             </div>
                           </div>
                         )}
@@ -322,9 +311,10 @@ export default function JobHunter() {
                         </div>
 
                         {/* Link to apply */}
-                        <div className="flex justify-end pt-2">
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                          <span className="text-[10px] text-slate-400">Source: {job.source || 'Scraped Posting'}</span>
                           <a
-                            href={job.job_url}
+                            href={job.job_url || job.applyUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="py-2 px-4 rounded-xl bg-slate-850 hover:bg-slate-750 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors border border-slate-700"
@@ -344,10 +334,10 @@ export default function JobHunter() {
 
           {!searchLoading && !isRefetching && jobsList.length === 0 && (
             <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-              <Search className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+              <Search className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
               <h4 className="font-bold text-sm text-slate-600 dark:text-slate-400">No Job Searches Queried Yet</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                Use the search box above to fetch live jobs and compute compatibility matching.
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-normal font-semibold">
+                Use the natural language box above to write queries. The AI parser will automatically extract role, location, and type filters!
               </p>
             </div>
           )}
@@ -433,12 +423,12 @@ export default function JobHunter() {
                             strokeWidth="8"
                             fill="transparent"
                             strokeDasharray={301.6}
-                            strokeDashoffset={301.6 - (301.6 * manualFitResult.score)}
+                            strokeDashoffset={301.6 - (301.6 * (manualFitResult.score > 1 ? manualFitResult.score / 100 : manualFitResult.score))}
                             className="transition-all duration-1000"
                           />
                         </svg>
                         <span className="absolute text-2xl font-extrabold text-slate-800 dark:text-white">
-                          {Math.round(manualFitResult.score * 100)}%
+                          {Math.round((manualFitResult.score > 1 ? manualFitResult.score / 100 : manualFitResult.score) * 100)}%
                         </span>
                       </div>
                       
@@ -452,7 +442,7 @@ export default function JobHunter() {
                       <div className="flex items-center gap-1 text-slate-800 dark:text-slate-200 font-bold mb-2">
                         <BookOpen className="h-4 w-4 text-indigo-400" /> AI Score Breakdown
                       </div>
-                      <p>{manualFitResult.summary}</p>
+                      <p className="whitespace-pre-line">{manualFitResult.summary}</p>
                     </div>
 
                   </div>

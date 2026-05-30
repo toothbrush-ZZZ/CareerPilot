@@ -39,14 +39,12 @@ export default function ProfileSettings() {
   const updateMutation = useMutation({
     mutationFn: authService.updateProfile,
     onSuccess: (data) => {
-      // 1. Update Zustand store session dynamically
       updateProfile({
         full_name: fullName,
         location_city: city,
         location_country: country,
       });
       
-      // 2. Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['cv-status'] });
       queryClient.invalidateQueries({ queryKey: ['user-location'] });
       

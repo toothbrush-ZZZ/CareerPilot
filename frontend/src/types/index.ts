@@ -49,12 +49,23 @@ export interface JobItem {
   job_url: string;
   role?: string;
   job_title?: string;
+  title?: string;
   company: string;
   location: string;
   description: string;
   fit_score?: number;
   fit_percentage?: number;
+  fitScore?: number;
+  fit_reason?: string;
+  fitReason?: string;
   summary?: string;
+  salary_range?: string;
+  salaryRange?: string;
+  deadline?: string;
+  job_type?: string;
+  jobType?: string;
+  applyUrl?: string;
+  source?: string;
 }
 
 export interface JobSearchResponse {
