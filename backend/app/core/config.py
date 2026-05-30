@@ -1,5 +1,6 @@
 from functools import lru_cache
 import logging
+from pathlib import Path
 
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -43,7 +44,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.2:latest"
 
     model_config = SettingsConfigDict(
-        env_file="../.env",
+        env_file=str(Path(__file__).resolve().parents[3] / ".env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )

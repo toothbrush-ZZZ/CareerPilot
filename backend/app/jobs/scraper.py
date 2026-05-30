@@ -113,13 +113,11 @@ class JobScraper:
         try:
             search_query = f"{query} {location}".strip()
 
-            encoded_query = quote_plus(query)
+            encoded_query = quote_plus(search_query)
 
-            url = (
-                f"{BDJOBS_BASE_URL}/h/jobs"
-                f"?txtsearch={encoded_query}"
-                f"&LocationId={quote_plus(location)}"
-            )
+            url = f"{BDJOBS_BASE_URL}/h/jobs?txtsearch={encoded_query}"
+            if location:
+                url += f"&LocationId={quote_plus(location)}"
 
             logger.info(f"Searching BDJobs: {url}")
 
@@ -150,8 +148,9 @@ class JobScraper:
                     "No job cards found. HTML structure may have changed."
                 )
 
-                with open("bdjobs_debug.html", "w", encoding="utf-8") as f:
-                    f.write(html)
+                if logger.isEnabledFor(logging.DEBUG):
+                    with open("bdjobs_debug.html", "w", encoding="utf-8") as f:
+                        f.write(html)
 
                 return []
 

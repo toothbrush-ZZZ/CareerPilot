@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS applications (
     company TEXT NOT NULL,
     location TEXT,
     job_url TEXT,
-    status TEXT NOT NULL DEFAULT 'applied',
+    status TEXT NOT NULL DEFAULT 'applied' CHECK (status IN ('applied', 'interviewing', 'offer', 'rejected')),
     notes TEXT,
     applied_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()

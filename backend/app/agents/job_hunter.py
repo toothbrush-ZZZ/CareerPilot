@@ -102,6 +102,7 @@ class JobHunterAgent:
         }
         
         await redis_client.set_json(cache_key, response_data, ttl=1800)
+        await redis_client.set_json(f"recent_searches:{user_id}", final_results, ttl=3600)
         return response_data
 
     async def _parse_query(self, query: str) -> Dict:
@@ -147,7 +148,9 @@ class JobHunterAgent:
         
         for j in jobs:
             url = j.get("job_url")
-            pair = (j.get("role", "").lower(), j.get("company", "").lower())
+            role = j.get("role") or j.get("job_title", "")
+            company = j.get("company", "")
+            pair = (role.lower(), company.lower())
             
             if url and url in seen_urls: continue
             if pair in seen_pairs: continue

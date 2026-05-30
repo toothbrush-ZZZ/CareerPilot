@@ -12,6 +12,12 @@ nudge_agent = NudgeAgent()
 @router.get("/stats")
 async def get_dashboard_stats(user: CurrentUser):
     user_id = user["user_id"]
+    cache_key = f"dashboard:{user_id}"
+    
+    redis_client = await redis.get_redis()
+    cached_stats = await redis_client.get_json(cache_key)
+    if cached_stats:
+        return cached_stats
     
     async with get_db(user_id) as db:
         total_res = await db.execute(
@@ -57,4 +63,5 @@ async def get_dashboard_stats(user: CurrentUser):
         nudges = nudge_agent.generate_nudges(stats, recent_jobs)
         stats["nudges"] = nudges
         
+        await redis_client.set_json(cache_key, stats, ttl=300)
         return stats

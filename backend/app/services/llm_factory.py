@@ -9,6 +9,10 @@ import asyncio
 
 import logging
 
+
+def _join_url(base_url: str, path: str) -> str:
+    return base_url.rstrip("/") + "/" + path.lstrip("/")
+
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
@@ -56,22 +60,22 @@ async def call_groq(messages: List[Dict[str, str]], system_prompt: str) -> Optio
 
 async def call_ollama(messages: List[Dict[str, str]], system_prompt: str) -> Optional[str]:
     try:
-        url = f"{settings.OLLAMA_URL}/api/chat"
+        url = _join_url(settings.OLLAMA_URL, "/api/chat")
         payload = {
             "model": settings.OLLAMA_MODEL,
             "messages": [{"role": "system", "content": system_prompt}] + messages,
             "stream": False
         }
-        logger.error(f"DEBUG: Ollama Request Model={settings.OLLAMA_MODEL} URL={url}")
+        logger.debug(f"DEBUG: Ollama Request Model={settings.OLLAMA_MODEL} URL={url}")
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=payload)
-            logger.error(f"DEBUG: Ollama Response Status={response.status_code}")
+            logger.debug(f"DEBUG: Ollama Response Status={response.status_code}")
             if response.status_code == 200:
                 return response.json()["message"]["content"]
             else:
-                logger.error(f"DEBUG: Ollama Error Body={response.text}")
+                logger.debug(f"DEBUG: Ollama Error Body={response.text}")
     except Exception as e:
-        logger.error(f"DEBUG: Ollama Exception: {e}")
+        logger.debug(f"DEBUG: Ollama Exception: {e}")
         return None
     return None
 
@@ -91,12 +95,5 @@ async def get_ai_response(messages: List[Dict[str, str]], system_prompt: str) ->
         
     response = await call_ollama(messages, system_prompt)
     if response: return response
-    
-    if not settings.GROQ_API_KEY:
-        response = await call_groq(messages, system_prompt)
-        if response: return response
-    if not settings.GEMINI_API_KEY:
-        response = await call_gemini(messages, system_prompt)
-        if response: return response
-        
+
     return "I'm sorry, I'm having trouble connecting to my AI engines. Please check your API keys or Ollama status."

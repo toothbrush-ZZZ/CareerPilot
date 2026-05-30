@@ -4,12 +4,16 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+
+def _join_url(base_url: str, path: str) -> str:
+    return base_url.rstrip("/") + "/" + path.lstrip("/")
+
 async def embed_texts(texts: List[str]) -> List[List[float]]:
     """Generates embeddings by calling the remote embedding service."""
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post(
-                f"{settings.EMBED_URL}/embed",
+                _join_url(settings.EMBED_URL, "/embed"),
                 json={"texts": texts}
             )
             response.raise_for_status()
@@ -23,7 +27,7 @@ async def embed_one(text: str) -> List[float]:
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.post(
-                f"{settings.EMBED_URL}/embed/one",
+                _join_url(settings.EMBED_URL, "/embed/one"),
                 json={"text": text}
             )
             response.raise_for_status()

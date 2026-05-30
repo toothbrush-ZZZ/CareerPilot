@@ -38,7 +38,7 @@ async def signup(data: UserSignup):
     user_id = str(uuid.uuid4())
     hashed_password = auth_service.hash_password(data.password)
 
-    async with get_db(user_id) as db:
+    async with get_db() as db:
         result = await db.execute(
             text("SELECT id FROM profiles WHERE email = :email"),
             {"email": data.email}
@@ -49,6 +49,7 @@ async def signup(data: UserSignup):
                 detail="Email already registered"
             )
 
+    async with get_db(user_id) as db:
         await db.execute(
             text("""
                 INSERT INTO profiles (id, email, password_hash, full_name)
@@ -115,7 +116,6 @@ async def change_password(data: ChangePasswordRequest, user: CurrentUser):
             text("UPDATE profiles SET password_hash = :new_hash WHERE id = :uid"),
             {"new_hash": new_hash, "uid": user_id}
         )
-        await db.commit()
 
     return {"status": "success", "message": "Password updated successfully"}
 
@@ -143,7 +143,6 @@ async def delete_account(data: DeleteAccountRequest, user: CurrentUser):
             text("DELETE FROM profiles WHERE id = :uid"),
             {"uid": user_id}
         )
-        await db.commit()
 
     redis = await get_redis()
     await redis.delete(f"profile:{user_id}")

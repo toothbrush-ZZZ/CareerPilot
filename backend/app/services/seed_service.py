@@ -127,7 +127,7 @@ async def seed_demo_data(db) -> bool:
                     "company": "Supabase",
                     "location": "Singapore",
                     "job_url": "https://supabase.com/careers",
-                    "status": "offered",
+                    "status": "offer",
                     "notes": "Received verbal offer. Negotiation phase."
                 },
                 {

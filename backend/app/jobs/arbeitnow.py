@@ -9,11 +9,12 @@ class ArbeitnowClient:
         """
         GET https://www.arbeitnow.com/api/job-board-api?search={search_term}
         """
+        query = f"{search_term} {location}".strip() if location else search_term
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
                 response = await client.get(
                     self.BASE_URL,
-                    params={"search": search_term}
+                    params={"search": query}
                 )
                 response.raise_for_status()
                 data = response.json()

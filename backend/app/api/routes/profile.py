@@ -62,8 +62,6 @@ async def update_profile(data: ProfileUpdate, user: CurrentUser):
             }
         )
         
-        await db.commit()
-        
         # Clear cache
         redis = await get_redis()
         await redis.delete(f"profile:{user_id}")

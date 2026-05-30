@@ -200,7 +200,11 @@ def cv_builder_to_text(data: Dict) -> str:
             
     if data.get("skills"):
         lines.append("\nSKILLS")
-        lines.append(", ".join(data["skills"]))
+        skills = data["skills"]
+        if isinstance(skills, list):
+            lines.append(", ".join(skills))
+        else:
+            lines.append(str(skills))
         
     if data.get("soft_skills"):
         lines.append("\nSOFT SKILLS")
