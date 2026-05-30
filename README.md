@@ -38,16 +38,93 @@ An AI-powered career management SaaS platform that aggregates job listings, eval
 
 ## 🏗️ Architecture
 
-CareerPilot uses a modern, scalable architecture:
+CareerPilot uses a modern, scalable architecture with RAG (Retrieval-Augmented Generation) at its core:
 
-- **Frontend**: Next.js 14+ with TypeScript, Tailwind CSS, and Shadcn/ui
+- **Frontend**: Next.js 16+ with TypeScript, Tailwind CSS, and Shadcn/ui
 - **Backend**: FastAPI with Python, SQLAlchemy, and async PostgreSQL
 - **Database**: PostgreSQL with pgvector for vector similarity search
 - **Cache**: Redis for performance optimization
 - **AI**: Multi-provider strategy (Groq, Gemini, Ollama) with fallback
 - **Infrastructure**: Docker Compose for containerized deployment
 
-For detailed architecture decisions, see [STACK_REPORT.md](./STACK_REPORT.md)
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND (Next.js)                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Landing    │  │   Dashboard  │  │  Job Search  │  │  AI Chat     │  │
+│  │    Page      │  │              │  │              │  │              │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+│         │                 │                 │                 │           │
+│         └─────────────────┴─────────────────┴─────────────────┘           │
+│                                   │                                        │
+│                           HTTP/REST API                                    │
+└───────────────────────────────────┼────────────────────────────────────────┘
+                                    │
+┌───────────────────────────────────┼────────────────────────────────────────┐
+│                                   │                                        │
+│  ┌────────────────────────────────▼────────────────────────────────┐      │
+│  │                      BACKEND (FastAPI)                           │      │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │      │
+│  │  │   Auth      │  │   CV        │  │   Jobs      │  │ Assistant │  │      │
+│  │  │  Middleware │  │  Service    │  │  Service    │  │  Service  │  │      │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │      │
+│  │         │                 │                 │               │         │      │
+│  │  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐  ┌─────▼─────┐  │      │
+│  │  │  Job Hunter │  │  Fit Scorer │  │  LLM Factory│  │  Tracker  │  │      │
+│  │  │    Agent    │  │             │  │             │  │  Service  │  │      │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │      │
+│  └─────────┼─────────────────┼─────────────────┼─────────────────┼───────┘      │
+│            │                 │                 │                 │             │
+│  ┌─────────▼─────────────────▼─────────────────▼─────────────────▼───────┐  │
+│  │                     SERVICE LAYER                                    │  │
+│  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐          │  │
+│  │  │  Auth     │  │  Embed    │  │  Seed     │  │  Nudge    │          │  │
+│  │  │  Service  │  │  Service  │  │  Service  │  │  Agent    │          │  │
+│  │  └───────────┘  └───────────┘  └───────────┘  └───────────┘          │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                    │                                        │
+└────────────────────────────────────┼────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────┼────────────────────────────────────────┐
+│                                     │                                        │
+│         ┌───────────────────────────┴───────────────────────────┐          │
+│         │                                                       │          │
+│  ┌──────▼──────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──▼───────┐ │
+│  │ PostgreSQL  │  │  Redis   │  │  Embed   │  │  Ollama  │  │  External │ │
+│  │ + pgvector  │  │  Cache   │  │  Service │  │   (AI)   │  │   APIs    │ │
+│  │             │  │          │  │          │  │          │  │           │ │
+│  │ - Profiles  │  │ - Sessions│  │ - Vector │  │ - Llama  │  │ - Groq    │ │
+│  │ - CV Chunks │  │ - Cache   │  │   Embed  │  │   3.2    │  │ - Gemini  │ │
+│  │ - Jobs      │  │ - History │  │          │  │          │  │ - JobSpy  │ │
+│  │ - Tracker   │  │          │  │          │  │          │  │ - Remotive│ │
+│  └─────────────┘  └──────────┘  └──────────┘  └──────────┘  └───────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+**RAG Architecture**
+- User's CV is the single source of truth
+- All AI responses are grounded in actual user data
+- Vector similarity search for semantic matching
+- Prevents hallucination of user background
+
+**Multi-Provider AI Strategy**
+- Provider fallback chain ensures reliability
+- Local Ollama instance for privacy-sensitive operations
+- Groq for fast real-time responses
+- Gemini for complex reasoning tasks
+
+**Scalability**
+- Async/await throughout for high throughput
+- Redis caching reduces database load
+- Connection pooling for database
+- Stateless JWT authentication
+- Containerized services for horizontal scaling
+
 
 ## 🚀 Quick Start
 
@@ -131,49 +208,13 @@ SUPABASE_SERVICE_KEY=your_supabase_service_key
 
 See [.env.example](./.env.example) for all available options.
 
-## 🛠️ Development
-
-### Frontend Development
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Access at http://localhost:3000
-
-### Backend Development
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Access at http://localhost:8000
-
-### Embedding Service Development
-
-```bash
-cd embed
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
-```
-
-Access at http://localhost:8001
-
 ## 📁 Project Structure
 
 ```
 CareerPilot/
 ├── backend/              # FastAPI backend
 │   ├── app/
-│   │   ├── agents/      # AI agent implementations
+│   │   ├─d─ agents/      # AI agent implementations
 │   │   ├── api/         # API routes
 │   │   ├── core/        # Core configuration
 │   │   ├── jobs/        # Job scraping logic
@@ -271,24 +312,3 @@ npm test
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Job scraping libraries: JobSpy, BeautifulSoup, Selenium
-- AI providers: Groq, Google Gemini, Ollama
-- UI components: Shadcn/ui, Radix UI, Lucide Icons
-- Database: PostgreSQL with pgvector extension
-
-## 📞 Support
-
-For issues and questions:
-- GitHub Issues: [repository-url]/issues
-- Email: support@careerpilot.ai
-
----
-
-Built with ❤️ for the AI Hackathon 2026
