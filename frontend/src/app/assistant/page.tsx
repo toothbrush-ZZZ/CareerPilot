@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import type { ChatMessage } from '@/lib/types';
 
 const SUGGESTIONS = [
   { text: "Am I ready for a Senior Dev role?", icon: CheckCircle2, color: "text-green-400" },
@@ -24,10 +25,19 @@ const SUGGESTIONS = [
 ];
 
 export default function AssistantPage() {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(() => Math.random().toString(36).substring(7));
+  const [sessionId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('chat_session_id');
+      if (stored) return stored;
+      const newId = Math.random().toString(36).substring(7);
+      localStorage.setItem('chat_session_id', newId);
+      return newId;
+    }
+    return Math.random().toString(36).substring(7);
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,6 +45,15 @@ export default function AssistantPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
+
+  const handleClear = async () => {
+    setMessages([]);
+    try {
+      await careerApi.clearChatSession(sessionId);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSend = async (text: string) => {
     const messageText = text || input;
@@ -73,7 +92,7 @@ export default function AssistantPage() {
           </div>
         </div>
         <button 
-          onClick={() => setMessages([])}
+          onClick={handleClear}
           className="p-2 rounded-lg hover:bg-white/5 text-white/30 hover:text-red-400 transition-all"
           title="Clear Conversation"
         >
@@ -98,7 +117,7 @@ export default function AssistantPage() {
               </motion.div>
               <h2 className="text-3xl font-bold mb-3 tracking-tight">How can I help you today?</h2>
               <p className="text-white/40 max-w-sm mb-10 leading-relaxed">
-                I'm your career co-pilot. I can analyze your readiness, find skill gaps, or build personalized learning roadmaps based on your experience.
+                I&apos;m your career co-pilot. I can analyze your readiness, find skill gaps, or build personalized learning roadmaps based on your experience.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl px-4">
@@ -119,7 +138,7 @@ export default function AssistantPage() {
           <AnimatePresence>
             {messages.map((m, i) => (
               <motion.div
-                key={i}
+                key={`${m.role}-${i}-${m.content.slice(0, 20)}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
@@ -186,7 +205,7 @@ export default function AssistantPage() {
             </button>
           </form>
           <div className="mt-3 text-center">
-            <p className="text-[10px] text-white/20 uppercase tracking-widest font-medium">Shift + Enter for multiline • Personalized Mode Active</p>
+            <p className="text-[10px] text-white/20 uppercase tracking-widest font-medium">Personalized Mode Active</p>
           </div>
         </div>
       </div>

@@ -5,28 +5,25 @@ import { careerApi } from '@/lib/api';
 import JobCard from '@/components/jobs/JobCard';
 import { 
   Search, 
-  MapPin, 
   Loader2, 
   Sparkles, 
   Filter, 
   X, 
-  Check, 
-  Plus, 
   ArrowRight,
-  TrendingUp,
   Brain,
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import type { Job } from '@/lib/types';
 
 export default function JobsPage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [searching, setSearching] = useState(false);
   const [hasCV, setHasCV] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [addingToTracker, setAddingToTracker] = useState<string | null>(null);
   const [addedJobs, setAddedJobs] = useState<Record<string, boolean>>({});
   const [searchMessage, setSearchMessage] = useState('');
@@ -64,7 +61,7 @@ export default function JobsPage() {
     }
   };
 
-  const handleAddToTracker = async (job: any, e: React.MouseEvent) => {
+  const handleAddToTracker = async (job: Job, e: React.MouseEvent) => {
     e.stopPropagation();
     const jobId = job.job_url || `${job.job_title}-${job.company}`;
     if (addedJobs[jobId] || addingToTracker) return;
@@ -77,7 +74,7 @@ export default function JobsPage() {
         location: job.location || 'Remote',
         job_url: job.job_url || '',
         status: 'applied',
-        notes: `Fit Score: ${Math.round(job.fit_score * 100)}%\nSource: ${job.source || 'Search'}`
+        notes: `Fit Score: ${Math.round((job.fit_score ?? 0) * 100)}%\nSource: ${job.source || 'Search'}`
       });
       setAddedJobs(prev => ({ ...prev, [jobId]: true }));
     } catch (err) {
@@ -87,7 +84,7 @@ export default function JobsPage() {
     }
   };
 
-  const navigateToCoverLetter = (job: any) => {
+  const navigateToCoverLetter = (job: Job) => {
     setSelectedJob(null);
     const params = new URLSearchParams({
       role: job.job_title,
@@ -169,7 +166,7 @@ export default function JobsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AnimatePresence>
-            {jobs.length > 0 ? jobs.map((job: any, i) => {
+            {jobs.length > 0 ? jobs.map((job, i) => {
               const jobId = job.job_url || `${job.job_title}-${job.company}`;
               const isAdded = !!addedJobs[jobId];
               

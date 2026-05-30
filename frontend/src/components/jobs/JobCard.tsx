@@ -13,18 +13,10 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Job } from '@/lib/types';
 
 interface JobCardProps {
-  job: {
-    job_title: string;
-    company: string;
-    location: string;
-    job_url: string;
-    fit_score: number;
-    fit_analysis?: any;
-    source?: string;
-    description?: string;
-  };
+  job: Job;
   onAnalyze: () => void;
   onAdd: (e: React.MouseEvent) => void;
   isAdded: boolean;
@@ -40,7 +32,7 @@ export default function JobCard({ job, onAnalyze, onAdd, isAdded, adding }: JobC
     return 'text-red-400 bg-red-400/10 border-red-400/20';
   };
 
-  const statusColor = getFitColor(job.fit_score);
+  const statusColor = getFitColor(job.fit_score ?? 0);
 
   return (
     <motion.div 

@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { careerApi } from '@/lib/api';
-import { User, Mail, MapPin, Shield, Camera, Loader2, Save } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { User, MapPin, Shield, Camera, Loader2, Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { Profile } from '@/lib/types';
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -25,17 +27,26 @@ export default function ProfilePage() {
   }, []);
 
   const handleSave = async () => {
+    if (!profile) return;
     setSaving(true);
+    setSaveMessage('');
     try {
       await careerApi.updateProfile(profile);
+      setSaveMessage('Profile saved successfully.');
     } catch (err) {
       console.error(err);
+      setSaveMessage('Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full">Loading...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <Loader2 className="animate-spin text-blue-500" size={40} />
+      <p className="text-white/40 animate-pulse font-medium">Loading your profile...</p>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -114,6 +125,15 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {saveMessage && (
+            <p className={cn(
+              "text-sm text-center",
+              saveMessage.includes('success') ? "text-green-400" : "text-red-400"
+            )}>
+              {saveMessage}
+            </p>
+          )}
 
           <div className="flex justify-end pt-4">
             <button 

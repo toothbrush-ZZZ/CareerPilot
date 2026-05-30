@@ -9,6 +9,7 @@ import {
   MessageSquare,
   CheckSquare,
   FileText,
+  Mail,
   User,
   LogOut,
   ChevronLeft,
@@ -25,11 +26,18 @@ const navItems = [
   { name: 'AI Assistant', href: '/assistant', icon: MessageSquare },
   { name: 'Application Tracker', href: '/tracker', icon: CheckSquare },
   { name: 'CV Builder', href: '/cv', icon: FileText },
+  { name: 'Cover Letter', href: '/cover-letter', icon: Mail },
   { name: 'Profile', href: '/profile', icon: User },
 ];
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sidebar_collapsed');
+      return stored === 'true';
+    }
+    return false;
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -42,15 +50,27 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     router.push('/login');
   };
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Basic route guard
   React.useEffect(() => {
     if (!isAuthPage) {
       const token = localStorage.getItem('token');
       if (!token) {
         router.push('/login');
+      } else {
+        setIsAuthenticated(true);
       }
+    } else {
+      setIsAuthenticated(true);
     }
+    setIsLoading(false);
   }, [pathname, isAuthPage, router]);
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-[#0a0a0b]"></div>;
+  }
 
   if (isAuthPage) {
     return <div className="min-h-screen bg-[#0a0a0b]">{children}</div>;
@@ -79,7 +99,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex items-center h-16 px-6 border-b border-white/5">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20">
               <span className="text-xl font-bold tracking-tighter">CP</span>
@@ -94,6 +114,13 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               </motion.span>
             )}
           </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-colors lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -103,6 +130,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setMobileOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
                   isActive
@@ -137,7 +165,11 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
         {/* Collapse toggle (desktop) */}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => {
+            const newState = !collapsed;
+            setCollapsed(newState);
+            localStorage.setItem('sidebar_collapsed', String(newState));
+          }}
           className="absolute -right-3 top-20 hidden lg:flex items-center justify-center w-6 h-6 rounded-full bg-[#111113] border border-white/10 text-white/50 hover:text-white transition-colors"
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}

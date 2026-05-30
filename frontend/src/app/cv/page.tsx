@@ -9,19 +9,16 @@ import {
   Loader2, 
   Plus, 
   Trash2,
-  ChevronRight,
-  ChevronDown,
-  Download,
-  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import type { CVStatus, InputGroupProps } from '@/lib/types';
 
 export default function CVPage() {
   const [activeMode, setActiveMode] = useState<'upload' | 'build'>('upload');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<CVStatus | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [buildData, setBuildData] = useState({
     personal: { name: '', email: '', phone: '', location: '' },
@@ -32,7 +29,7 @@ export default function CVPage() {
     projects: [{ name: '', description: '', url: '' }]
   });
 
-  const fetchStatus = async () => {
+  const refreshStatus = async () => {
     try {
       const res = await careerApi.getCVStatus();
       setStatus(res.data);
@@ -42,7 +39,13 @@ export default function CVPage() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    let active = true;
+    void careerApi.getCVStatus()
+      .then((res) => {
+        if (active) setStatus(res.data);
+      })
+      .catch((err) => console.error(err));
+    return () => { active = false; };
   }, []);
 
   const handleUpload = async () => {
@@ -50,7 +53,7 @@ export default function CVPage() {
     setUploading(true);
     try {
       await careerApi.uploadCV(file);
-      await fetchStatus();
+      await refreshStatus();
       setFile(null);
     } catch (err) {
       console.error(err);
@@ -63,7 +66,7 @@ export default function CVPage() {
     setSaving(true);
     try {
       await careerApi.buildCV(buildData);
-      await fetchStatus();
+      await refreshStatus();
     } catch (err) {
       console.error(err);
     } finally {
@@ -385,7 +388,7 @@ export default function CVPage() {
   );
 }
 
-function InputGroup({ label, value, onChange, type = "text" }: any) {
+function InputGroup({ label, value, onChange, type = "text" }: InputGroupProps) {
   return (
     <div className="space-y-2">
       <label className="text-xs font-bold text-white/30 uppercase tracking-widest px-1">{label}</label>

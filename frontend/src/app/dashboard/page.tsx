@@ -8,18 +8,12 @@ import {
   Users, 
   CheckCircle, 
   Flame, 
-  Search,
   Plus,
   AlertCircle,
   X,
   Loader2
 } from 'lucide-react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   PieChart,
@@ -28,19 +22,11 @@ import {
 } from 'recharts';
 
 import { useRouter } from 'next/navigation';
-
-interface Stats {
-  total_applications: number;
-  this_week: number;
-  by_status: Record<string, number>;
-  goals_completed: number;
-  goals_total: number;
-  nudges: string[];
-}
+import type { DashboardStats, StatCardProps } from '@/lib/types';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -112,18 +98,18 @@ export default function DashboardPage() {
           value={`${stats?.this_week || 0}/5`} 
           icon={TrendingUp} 
           subtitle="Progress towards goal" 
-          trend={stats?.this_week >= 5 ? "Goal met! ✨" : "3 left to go"}
+          trend={(stats?.this_week ?? 0) >= 5 ? "Goal met! ✨" : `${5 - (stats?.this_week ?? 0)} left to go`}
         />
         <StatCard 
           label="Goal Progress" 
           value={`${stats?.goals_completed || 0}/${stats?.goals_total || 0}`} 
           icon={CheckCircle} 
           subtitle="Tasks completed" 
-          trend={`${Math.round((stats?.goals_completed / (stats?.goals_total || 1)) * 100)}% complete`}
+          trend={`${Math.round(((stats?.goals_completed ?? 0) / (stats?.goals_total || 1)) * 100)}% complete`}
         />
         <StatCard 
           label="Day Streak" 
-          value="7" 
+          value={stats?.streak ?? 0} 
           icon={Flame} 
           subtitle="Keep it up!" 
           trend="🔥 Fire streak"
@@ -179,7 +165,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="space-y-4">
-              {stats?.nudges.length > 0 ? stats.nudges.map((n: string, i: number) => (
+              {(stats?.nudges?.length ?? 0) > 0 ? stats!.nudges.map((n: string, i: number) => (
                 <motion.div 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -203,7 +189,7 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, subtitle, trend }: any) {
+function StatCard({ label, value, icon: Icon, subtitle, trend }: StatCardProps) {
   return (
     <motion.div 
       whileHover={{ y: -5 }}

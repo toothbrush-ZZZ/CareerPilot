@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import { careerApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -19,9 +20,7 @@ export default function SignupPage() {
     setError('');
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-      
-      const response = await axios.post(`${apiUrl}/auth/signup`, {
+      const response = await careerApi.signup({
         email,
         password,
         full_name: fullName
@@ -30,8 +29,8 @@ export default function SignupPage() {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user_id', response.data.user_id);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -13,17 +13,18 @@ import {
   AlertTriangle,
   Mail
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
+import type { Profile } from '@/lib/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function CoverLetterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [roleTitle, setRoleTitle] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
+  const [roleTitle, setRoleTitle] = useState(() => searchParams.get('role') ?? '');
+  const [companyName, setCompanyName] = useState(() => searchParams.get('company') ?? '');
+  const [jobDescription, setJobDescription] = useState(() => searchParams.get('desc') ?? '');
   const [userName, setUserName] = useState('');
   
   const [generating, setGenerating] = useState(false);
@@ -38,20 +39,9 @@ function CoverLetterContent() {
   
   const [hasCV, setHasCV] = useState(false);
   const [checkingCV, setCheckingCV] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   const [error, setError] = useState('');
-
-  // Read search parameters from URL (e.g., passed from Job Hunter)
-  useEffect(() => {
-    const role = searchParams.get('role');
-    const company = searchParams.get('company');
-    const desc = searchParams.get('desc');
-    
-    if (role) setRoleTitle(role);
-    if (company) setCompanyName(company);
-    if (desc) setJobDescription(desc);
-  }, [searchParams]);
 
   useEffect(() => {
     const initData = async () => {
@@ -96,9 +86,9 @@ function CoverLetterContent() {
       setLetterText(res.data.letter_text);
       setWordCount(res.data.word_count || res.data.letter_text.split(/\s+/).length);
       setKeyPointsUsed(res.data.key_cv_points_used || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Failed to generate cover letter. Please check your credentials or backend configurations.');
+      setError(getErrorMessage(err, 'Failed to generate cover letter. Please check your credentials or backend configurations.'));
     } finally {
       setGenerating(false);
     }
@@ -122,9 +112,9 @@ function CoverLetterContent() {
       setLetterText(res.data.letter_text);
       setWordCount(res.data.word_count || res.data.letter_text.split(/\s+/).length);
       setFeedback('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Failed to refine cover letter.');
+      setError(getErrorMessage(err, 'Failed to refine cover letter.'));
     } finally {
       setRefining(false);
     }
@@ -148,9 +138,9 @@ function CoverLetterContent() {
         notes: `Generated Cover Letter:\n\n${letterText}`
       });
       setSavedToTracker(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError('Failed to add to tracker: ' + (err.message || 'Unknown error'));
+      setError('Failed to add to tracker: ' + getErrorMessage(err, 'Unknown error'));
     }
   };
 

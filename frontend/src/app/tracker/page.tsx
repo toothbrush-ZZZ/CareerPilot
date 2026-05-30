@@ -7,7 +7,6 @@ import {
   CheckCircle2, 
   Circle, 
   MoreVertical, 
-  Search, 
   Plus, 
   ExternalLink,
   Loader2,
@@ -18,6 +17,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/tracker/Calendar';
+import type { Application, ApplicationCardProps, Goal } from '@/lib/types';
 
 const COLUMNS = [
   { id: 'applied', title: 'Applied', color: 'bg-blue-500' },
@@ -27,8 +27,8 @@ const COLUMNS = [
 ];
 
 export default function TrackerPage() {
-  const [applications, setApplications] = useState<any[]>([]);
-  const [goals, setGoals] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'kanban' | 'goals' | 'calendar'>('kanban');
 
@@ -72,12 +72,13 @@ export default function TrackerPage() {
     initData();
   }, []);
 
-  const updateStatus = async (appId: string, newStatus: string) => {
+  const updateStatus = async (appId: string, newStatus: string, oldStatus: string) => {
     try {
       await careerApi.updateApplication(appId, { status: newStatus });
       setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: newStatus } : a));
     } catch (err) {
       console.error(err);
+      setApplications(apps => apps.map(a => a.id === appId ? { ...a, status: oldStatus } : a));
     }
   };
 
@@ -166,16 +167,20 @@ export default function TrackerPage() {
   }
 
   const deadlines = [
-    ...applications.filter(a => a.applied_at).map(a => ({ 
-      date: a.applied_at, 
-      title: `Applied to ${a.company}`, 
-      color: 'bg-blue-500' 
-    })),
-    ...goals.filter(g => g.due_date).map(g => ({ 
-      date: g.due_date, 
-      title: g.text, 
-      color: g.completed ? 'bg-green-500' : 'bg-amber-500' 
-    }))
+    ...applications
+      .filter((a): a is Application & { applied_at: string } => Boolean(a.applied_at))
+      .map((a) => ({
+        date: a.applied_at,
+        title: `Applied to ${a.company}`,
+        color: 'bg-blue-500',
+      })),
+    ...goals
+      .filter((g): g is Goal & { due_date: string } => Boolean(g.due_date))
+      .map((g) => ({
+        date: g.due_date,
+        title: g.text,
+        color: g.completed ? 'bg-green-500' : 'bg-amber-500',
+      })),
   ];
 
   return (
@@ -511,7 +516,7 @@ export default function TrackerPage() {
   );
 }
 
-function ApplicationCard({ app, onStatusChange, onDelete }: any) {
+function ApplicationCard({ app, onStatusChange, onDelete }: ApplicationCardProps) {
   const [showOptions, setShowOptions] = useState(false);
 
   return (
@@ -530,7 +535,7 @@ function ApplicationCard({ app, onStatusChange, onDelete }: any) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">
           <CalendarIcon size={10} />
-          <span>{new Date(app.applied_at).toLocaleDateString()}</span>
+          <span>{app.applied_at ? new Date(app.applied_at + 'T00:00:00').toLocaleDateString() : '—'}</span>
         </div>
         <div className="flex gap-1">
           {app.job_url && (
@@ -547,7 +552,7 @@ function ApplicationCard({ app, onStatusChange, onDelete }: any) {
           {COLUMNS.map(col => (
             <button 
               key={col.id}
-              onClick={() => { onStatusChange(col.id); setShowOptions(false); }}
+              onClick={() => { onStatusChange(col.id, app.status); setShowOptions(false); }}
               className={cn(
                 "w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white/5",
                 app.status === col.id ? "text-blue-400" : "text-white/60"
