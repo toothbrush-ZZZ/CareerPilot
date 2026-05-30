@@ -110,16 +110,18 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
 # Embedding Service
 EMBED_URL=http://embed:8001
+
+# AI Services (Ollama - Required)
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:latest
 ```
 
 ### Optional Environment Variables
 
 ```bash
-# AI Services
+# AI Services (Cloud Providers)
 GROQ_API_KEY=your_groq_api_key
 GEMINI_API_KEY=your_gemini_api_key
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:latest
 
 # Supabase (for social login)
 SUPABASE_URL=your_supabase_url

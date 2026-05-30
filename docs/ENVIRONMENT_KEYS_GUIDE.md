@@ -116,8 +116,8 @@ Copy the printed hexadecimal output (a 64-character string) and save it as `JWT_
 
 ---
 
-## 6. Offline LLM Setup (Ollama)
-Ollama runs lightweight large language models directly on your hardware, completely offline and free.
+## 6. AI Services (Ollama - Required)
+Ollama runs lightweight large language models directly on your hardware, completely offline and free. This is a required service for CareerPilot's AI features.
 
 ### Step-by-Step Instructions:
 1.  **Download Ollama**: Visit [ollama.com](https://ollama.com) and download the appropriate package for Linux, macOS, or Windows.

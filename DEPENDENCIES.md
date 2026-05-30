@@ -198,6 +198,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
 # Embedding Service
 EMBED_URL=http://embed:8001
+
+# AI Services (Ollama - Required)
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:latest
 ```
 
 ### Optional Variables
@@ -208,13 +212,9 @@ SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_KEY=your_supabase_service_key
 
-# AI Services
+# AI Services (Cloud Providers)
 GROQ_API_KEY=your_groq_api_key
 GEMINI_API_KEY=your_gemini_api_key
-
-# Ollama (local AI)
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:latest
 
 # Job APIs
 ADZUNA_APP_ID=your_adzuna_app_id
