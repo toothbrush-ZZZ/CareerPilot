@@ -354,7 +354,6 @@ Response:
   "status": "success"
 }
 ```
-```
 ---
 
 ## Dashboard

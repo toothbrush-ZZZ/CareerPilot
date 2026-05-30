@@ -4,12 +4,12 @@ echo --- CareerPilot Setup ---
 :: Docker images (first run)
 if not exist .docker_images_built (
     echo First-time setup: building Docker images...
-    docker compose build || docker-compose build
+    docker-compose build
     if %ERRORLEVEL% EQU 0 (
         echo 1>.docker_images_built
         echo Docker images built successfully.
     ) else (
-        echo Docker build failed. You can run "docker compose build" manually.
+        echo Docker build failed. You can run "docker-compose build" manually.
     )
 ) else (
     echo Docker images already built. Skipping docker build.

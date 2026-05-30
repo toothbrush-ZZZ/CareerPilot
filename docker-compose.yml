@@ -35,6 +35,7 @@ services:
       - embed
     volumes:
       - ./backend:/app
+      - /app/venv
     networks:
       - careerpilot-net
 

@@ -128,7 +128,7 @@ curl -s http://localhost:8000/health
 {"status":"error","redis":"<error message>"}
 ```
 
-→ Start Redis: `docker compose up -d redis`
+Start Redis: `docker compose up -d redis`
 
 ### 3.3 Embed service
 
@@ -159,9 +159,7 @@ Tokens are issued by local signup/login (JWT signed with `JWT_SECRET`, audience 
 ### 4.1 Sign up
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/auth/signup \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\",\"full_name\":\"Test User\"}"
+curl -s -X POST http://localhost:8000/api/v1/auth/signup -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"TestPass123!","full_name":"Test User"}'
 ```
 
 **Expected (201/200):**
@@ -204,9 +202,7 @@ set USER_ID=<paste user_id>
 ### 4.2 Login
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"test@example.com\",\"password\":\"TestPass123!\"}"
+curl -s -X POST http://localhost:8000/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"TestPass123!"}'
 ```
 
 Same response shape as signup.
@@ -214,8 +210,7 @@ Same response shape as signup.
 ### 4.3 Invalid token (sanity check)
 
 ```bash
-curl -s http://localhost:8000/api/v1/profile \
-  -H "Authorization: Bearer invalid"
+curl -s http://localhost:8000/api/v1/profile -H "Authorization: Bearer invalid"
 ```
 
 **Expected:** `401` with authentication error.
@@ -231,8 +226,7 @@ Replace `$TOKEN` with your JWT in all examples.
 **Get profile**
 
 ```bash
-curl -s http://localhost:8000/api/v1/profile \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/profile -H "Authorization: Bearer $TOKEN"
 ```
 
 **Expected:** JSON with `id`, `email`, `full_name`, `location_city`, `location_country`.
@@ -240,10 +234,7 @@ curl -s http://localhost:8000/api/v1/profile \
 **Update profile**
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/profile \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"full_name\":\"Test User\",\"location_city\":\"Dhaka\",\"location_country\":\"Bangladesh\"}"
+curl -s -X POST http://localhost:8000/api/v1/profile -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"full_name":"Test User","location_city":"Dhaka","location_country":"Bangladesh"}'
 ```
 
 **Expected:** `{"status":"success","message":"Profile updated"}`
@@ -255,8 +246,7 @@ curl -s -X POST http://localhost:8000/api/v1/profile \
 **Status before upload**
 
 ```bash
-curl -s http://localhost:8000/api/v1/cv/status \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/cv/status -H "Authorization: Bearer $TOKEN"
 ```
 
 **Expected:** `{"has_cv":false}`
@@ -264,9 +254,7 @@ curl -s http://localhost:8000/api/v1/cv/status \
 **Upload CV** (PDF or DOCX, max 5 MB)
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/cv/upload \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@/path/to/your/resume.pdf"
+curl -s -X POST http://localhost:8000/api/v1/cv/upload -H "Authorization: Bearer $TOKEN" -F "file=@/path/to/your/resume.pdf"
 ```
 
 **Expected:** JSON with `chunks_stored`, `sections`, optional `extracted_location`.
@@ -276,8 +264,7 @@ Requires **embed service** running. If upload fails with connection error → ch
 **Status after upload**
 
 ```bash
-curl -s http://localhost:8000/api/v1/cv/status \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/cv/status -H "Authorization: Bearer $TOKEN"
 ```
 
 **Expected:** `has_cv: true`, `chunk_count` > 0, `sections` array.
@@ -285,17 +272,13 @@ curl -s http://localhost:8000/api/v1/cv/status \
 **Build CV from JSON** (alternative to file upload)
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/cv/build \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"name\":\"Test User\",\"summary\":\"Software engineer\",\"skills\":[\"Python\",\"FastAPI\"]}"
+curl -s -X POST http://localhost:8000/api/v1/cv/build -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"name":"Test User","summary":"Software engineer","skills":["Python","FastAPI"]}'
 ```
 
 **Delete CV**
 
 ```bash
-curl -s -X DELETE http://localhost:8000/api/v1/cv \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -X DELETE http://localhost:8000/api/v1/cv -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
@@ -305,8 +288,7 @@ curl -s -X DELETE http://localhost:8000/api/v1/cv \
 **Search** (may call external job APIs; can take 10–30s)
 
 ```bash
-curl -s "http://localhost:8000/api/v1/jobs/search?query=python%20developer&max_results=5" \
-  -H "Authorization: Bearer $TOKEN"
+curl -s "http://localhost:8000/api/v1/jobs/search?query=python%20developer&max_results=5" -H "Authorization: Bearer $TOKEN"
 ```
 
 **Expected:** List of job objects (source depends on scrapers: Remotive, Arbeitnow, etc.).
@@ -314,17 +296,13 @@ curl -s "http://localhost:8000/api/v1/jobs/search?query=python%20developer&max_r
 **User location**
 
 ```bash
-curl -s http://localhost:8000/api/v1/jobs/location \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/jobs/location -H "Authorization: Bearer $TOKEN"
 ```
 
 **Manual fit score** (needs CV uploaded + AI key or Ollama)
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/jobs/manual-fit \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"job_description\":\"We need Python, FastAPI, PostgreSQL, 3+ years experience.\"}"
+curl -s -X POST http://localhost:8000/api/v1/jobs/manual-fit -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"job_description":"We need Python, FastAPI, PostgreSQL, 3+ years experience."}'
 ```
 
 ---
@@ -334,17 +312,13 @@ curl -s -X POST http://localhost:8000/api/v1/jobs/manual-fit \
 **Create application**
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/tracker/applications \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"job_title\":\"Backend Engineer\",\"company\":\"Acme Corp\",\"status\":\"applied\",\"location\":\"Remote\"}"
+curl -s -X POST http://localhost:8000/api/v1/tracker/applications -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"job_title":"Backend Engineer","company":"Acme Corp","status":"applied","location":"Remote"}'
 ```
 
 **List applications**
 
 ```bash
-curl -s http://localhost:8000/api/v1/tracker/applications \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/tracker/applications -H "Authorization: Bearer $TOKEN"
 ```
 
 Copy an application `id` from the response for update/delete.
@@ -352,40 +326,31 @@ Copy an application `id` from the response for update/delete.
 **Update application**
 
 ```bash
-curl -s -X PATCH "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"status\":\"interviewing\",\"notes\":\"Phone screen scheduled\"}"
+curl -s -X PATCH "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"status":"interviewing","notes":"Phone screen scheduled"}'
 ```
 
 **Delete application**
 
 ```bash
-curl -s -X DELETE "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -X DELETE "http://localhost:8000/api/v1/tracker/applications/<APP_ID>" -H "Authorization: Bearer $TOKEN"
 ```
 
 **Goals — create**
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/tracker/goals \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"text\":\"Apply to 5 jobs this week\",\"due_date\":\"2026-06-01\"}"
+curl -s -X POST http://localhost:8000/api/v1/tracker/goals -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"text":"Apply to 5 jobs this week","due_date":"2026-06-01"}'
 ```
 
 **Goals — list**
 
 ```bash
-curl -s http://localhost:8000/api/v1/tracker/goals \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/tracker/goals -H "Authorization: Bearer $TOKEN"
 ```
 
 **Goals — toggle complete** (use goal `id` from list)
 
 ```bash
-curl -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
@@ -393,8 +358,7 @@ curl -s -X PATCH "http://localhost:8000/api/v1/tracker/goals/<GOAL_ID>/toggle" \
 ### 5.5 Dashboard
 
 ```bash
-curl -s http://localhost:8000/api/v1/dashboard/stats \
-  -H "Authorization: Bearer $TOKEN"
+curl -s http://localhost:8000/api/v1/dashboard/stats -H "Authorization: Bearer $TOKEN"
 ```
 
 **Expected:** `total_applications`, `this_week`, `by_status`, `goals_total`, `goals_completed`, `nudges` (array of strings).
@@ -404,10 +368,7 @@ curl -s http://localhost:8000/api/v1/dashboard/stats \
 ### 5.6 AI assistant (needs CV + AI provider)
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/assistant/chat \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"message\":\"What skills are on my CV?\",\"session_id\":\"test-session-1\"}"
+curl -s -X POST http://localhost:8000/api/v1/assistant/chat -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"message":"What skills are on my CV?","session_id":"test-session-1"}'
 ```
 
 **Expected:** `response`, `session_id`, `history`.
@@ -417,8 +378,7 @@ If all AI providers fail, response text mentions trouble connecting to AI engine
 **Clear chat session**
 
 ```bash
-curl -s -X DELETE "http://localhost:8000/api/v1/assistant/session/test-session-1" \
-  -H "Authorization: Bearer $TOKEN"
+curl -s -X DELETE "http://localhost:8000/api/v1/assistant/session/test-session-1" -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
@@ -426,10 +386,7 @@ curl -s -X DELETE "http://localhost:8000/api/v1/assistant/session/test-session-1
 ### 5.7 Cover letter (Gemini preferred, Groq fallback)
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/cover-letter/generate \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"job_description\":\"Python backend role at a fintech startup.\",\"company_name\":\"Acme\",\"role_title\":\"Backend Engineer\",\"user_name\":\"Test User\"}"
+curl -s -X POST http://localhost:8000/api/v1/cover-letter/generate -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"job_description":"Python backend role at a fintech startup.","company_name":"Acme","role_title":"Backend Engineer","user_name":"Test User"}'
 ```
 
 **Expected:** `letter_text`, `word_count`, `key_cv_points_used`.

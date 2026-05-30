@@ -1,48 +1,75 @@
+# Environment variables
 .env
 .env.local
+.env.*.local
 backend/.env
 backend/.env.local
-node_modules
-__pycache__
-.next
-*.pyc
-.DS_Store
-*.egg-info
-dist
-build
-.pytest_cache
-embed_cache/
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Next.js
+.next/
+out/
+
+# Python
 venv/
 .venv/
-uploads/
-frontend/node_modules/
 backend/venv/
 backend/.venv/
-backend/__pycache__/
-backend/app/__pycache__/
+embed/venv/
+embed/.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
 .idea/
 .vscode/
-*.log
-.docker_images_built
-search_results.json
-backend/test_cv.*
-backend/verify_fixes.py
-Prompts1/
-Prompts2/
-HybridAgenticArchitecturePrompt.md
-implementation_plan.md.resolved
-implementation_plan_phase_5.md.resolved
-project_overview.md.resolved
-Codesprint_poridhi.md
-backend/body.json
-backend/test_*.py
-backend/smoke_test.py
-test_ollama.py
-test_ollama_chat.py
-user_data_guide.md
+.cursor/
+*.swp
+*.swo
+*~
 
-JUDGE_SETUP_PRIVATE.md
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.docker_images_built
+
+# Application data
+uploads/
+backend/uploads/
+embed_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+search_results.json
+backend/body.json
+
+# Security
 *.pem
 *.key
+*.cert
+*.crt
+JUDGE_SETUP_PRIVATE.md
 
 
