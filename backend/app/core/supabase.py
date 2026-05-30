@@ -10,7 +10,8 @@ _admin_client: AsyncClient = None
 async def get_supabase_admin() -> AsyncClient:
     global _admin_client
     if not _admin_client:
-        # Note: supabase-py's AsyncClient usage
+        if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
+            raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set to use Supabase admin client")
         _admin_client = await create_client(
             settings.SUPABASE_URL, 
             settings.SUPABASE_SERVICE_KEY

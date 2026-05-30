@@ -5,6 +5,7 @@ from app.core.redis import get_redis
 from app.services.seed_service import DEMO_USER_ID, DEMO_EMAIL, reset_demo_data
 from app.services import auth_service
 from app.utils.hashing import cache_key_embed
+from app.middleware.auth import CurrentUser
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/debug", tags=["debug"])
 
 @router.post("/reset-demo")
-async def reset_demo():
+async def reset_demo(user: CurrentUser):
     """
     Clears all data associated with the stable demo account and re-seeds it.
     """
@@ -34,7 +35,7 @@ async def reset_demo():
     return {"status": "success", "message": "Demo data reset and re-seeded successfully."}
 
 @router.post("/login-demo")
-async def login_demo():
+async def login_demo(user: CurrentUser):
     """
     Bypasses standard password verification to log in as the stable demo user.
     Useful for hackathon presentation and quick access.

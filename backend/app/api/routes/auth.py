@@ -38,7 +38,7 @@ async def signup(data: UserSignup):
     user_id = str(uuid.uuid4())
     hashed_password = auth_service.hash_password(data.password)
 
-    async with get_db() as db:
+    async with get_db(user_id) as db:
         result = await db.execute(
             text("SELECT id FROM profiles WHERE email = :email"),
             {"email": data.email}
@@ -49,7 +49,6 @@ async def signup(data: UserSignup):
                 detail="Email already registered"
             )
 
-    async with get_db(user_id) as db:
         await db.execute(
             text("""
                 INSERT INTO profiles (id, email, password_hash, full_name)

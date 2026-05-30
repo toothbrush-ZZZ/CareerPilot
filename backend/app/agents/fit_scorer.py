@@ -1,171 +1,167 @@
 import re
-import numpy as np
-import httpx
-from typing import List, Dict, Set, Optional
-from app.services import cv_service, embed_service
-from app.core.config import get_settings
+import json
 import logging
+from typing import List, Dict, Optional
+from app.services import cv_service, embed_service
+from app.services.llm_factory import get_ai_response
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
-
 settings = get_settings()
 
-# Skill keyword bank
-TECH_SKILLS = {
-    "python", "javascript", "typescript", "java", "c++", "sql", "r",
-    "machine learning", "deep learning", "nlp", "computer vision",
-    "react", "next.js", "fastapi", "django", "flask", "node.js",
-    "docker", "kubernetes", "aws", "gcp", "azure", "linux",
-    "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy",
-    "git", "agile", "scrum", "rest api", "graphql", "postgresql",
-    "mongodb", "redis", "elasticsearch", "spark", "hadoop",
-    "data analysis", "data engineering", "mlops", "devops",
-}
+async def extract_skills_from_jd(job_description: str) -> List[str]:
+    system_prompt = """
+You are a technical recruiter. Extract a JSON list of key technical skills, programming languages, tools, libraries, frameworks, and databases required in the job description.
+Return ONLY a valid JSON array of strings, for example: ["Python", "FastAPI", "Docker", "AWS"].
+Do not include soft skills. Do not include markdown formatting, backticks, or extra text.
+"""
+    response = await get_ai_response([{"role": "user", "content": job_description[:2000]}], system_prompt)
+    try:
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            parsed = json.loads(match.group())
+            if isinstance(parsed, list):
+                return [str(s) for s in parsed]
+        return []
+    except Exception as e:
+        logger.error(f"Error parsing JD skills: {e}. Raw response: {response}")
+        return []
 
-def _section_text(chunks: List[Dict], *keywords: str) -> str:
-    """Match CV chunks by section header keywords (e.g. WORK EXPERIENCE, TECHNICAL SKILLS)."""
-    parts = []
-    for c in chunks:
-        sec = (c.get("section") or "").upper()
-        if any(kw in sec for kw in keywords):
-            parts.append(c["content"])
-    return " ".join(parts)
+async def extract_skills_from_cv(cv_chunks: List[Dict]) -> List[str]:
+    cv_text = "\n".join([c["content"] for c in cv_chunks])
+    system_prompt = """
+You are a career assistant. Extract a JSON list of all technical skills, programming languages, tools, libraries, frameworks, and databases mentioned in the candidate's CV context.
+Return ONLY a valid JSON array of strings, for example: ["React", "TypeScript", "Node.js", "PostgreSQL"].
+Do not include soft skills. Do not include markdown formatting, backticks, or extra text.
+"""
+    response = await get_ai_response([{"role": "user", "content": cv_text[:3000]}], system_prompt)
+    try:
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            parsed = json.loads(match.group())
+            if isinstance(parsed, list):
+                return [str(s) for s in parsed]
+        return []
+    except Exception as e:
+        logger.error(f"Error parsing CV skills: {e}. Raw response: {response}")
+        return []
 
+async def generate_fit_reason_and_alignment(matched_skills: List[str], jd_skills: List[str], cv_chunks: List[Dict]) -> Dict:
+    cv_text = "\n".join([f"- {c['content']}" for c in cv_chunks])
+    matched_str = ", ".join(matched_skills) if matched_skills else "general background"
+    missing_skills = [s for s in jd_skills if s not in matched_skills]
+    missing_str = ", ".join(missing_skills) if missing_skills else "none"
+    
+    system_prompt = """
+You are an expert recruiter matching a candidate's CV against a job description.
+Review the CV chunks, matching skills, and missing skills.
+Provide:
+1. A brief one-sentence overall fit explanation (under 20 words).
+2. A detailed alignment analysis with exactly two sections: "✅ Why this matches you:" and "⚠️ Gaps:".
+The alignment analysis must be grounded in the candidate's actual projects/roles/experience from their CV chunks, not generic statements.
+
+Format your response exactly as:
+FIT_REASON: <one-sentence overall explanation>
+ALIGNMENT:
+✅ Why this matches you:
+<1-2 sentences explaining alignment with projects/roles>
+
+⚠️ Gaps:
+<1 sentence detailing missing skills or requirements>
+"""
+    content = f"CV Chunks:\n{cv_text}\n\nMatched Skills: {matched_str}\nMissing Skills: {missing_str}"
+    response = await get_ai_response([{"role": "user", "content": content}], system_prompt)
+    
+    fit_reason = "Good alignment with candidate experience."
+    alignment = "✅ Why this matches you:\nMatches your profile.\n\n⚠️ Gaps:\nNo major gaps."
+    
+    try:
+        if "FIT_REASON:" in response and "ALIGNMENT:" in response:
+            parts = response.split("ALIGNMENT:")
+            fit_reason = parts[0].replace("FIT_REASON:", "").strip()
+            alignment = parts[1].strip()
+        else:
+            lines = response.split("\n")
+            for line in lines:
+                if line.startswith("FIT_REASON:"):
+                    fit_reason = line.replace("FIT_REASON:", "").strip()
+                    break
+            # Clean response for alignment
+            clean_resp = re.sub(r'FIT_REASON:.*', '', response).strip()
+            clean_resp = clean_resp.replace("ALIGNMENT:", "").strip()
+            if clean_resp:
+                alignment = clean_resp
+    except Exception:
+        pass
+        
+    return {"fit_reason": fit_reason, "alignment_analysis": alignment}
 
 class FitScorer:
     def __init__(self):
         pass
 
-    async def _get_embedding(self, text: str) -> Optional[List[float]]:
-        """Get embedding from central embed service."""
-        try:
-            return await embed_service.embed_one(text[:2000])
-        except Exception as e:
-            logger.error(f"Embedding error in FitScorer for text '{text[:50]}...': {e}")
-        return None
-
-    def _cosine_similarity(self, v1: List[float], v2: List[float]) -> float:
-        """Compute cosine similarity between two vectors."""
-        if not v1 or not v2: return 0.0
-        vec1 = np.array(v1)
-        vec2 = np.array(v2)
-        dot = np.dot(vec1, vec2)
-        norm1 = np.linalg.norm(vec1)
-        norm2 = np.linalg.norm(vec2)
-        if norm1 == 0 or norm2 == 0: return 0.0
-        return float(dot / (norm1 * norm2))
-
     async def compute_fit(self, user_id: str, job_description: str, db) -> Dict:
         """
-        Computes a deterministic fit score using a weighted formula.
-        TOTAL SCORE = (skill_overlap × 0.40) + (experience_match × 0.30) + 
-                      (keyword_density × 0.20) + (education_match × 0.10)
+        Computes fit score and reasoning by comparing JD against retrieved CV chunks.
         """
-        chunks = await cv_service.get_cv_chunks(user_id, db)
+        # 1. Retrieve top-k relevant chunks from user's CV vector store
+        cv_chunks = await cv_service.search_cv(job_description, user_id, db, limit=5)
         
-        cv_skills_text = _section_text(chunks, "SKILL", "TECHNOLOG")
-        cv_exp_text = _section_text(chunks, "EXPERIENCE", "EMPLOYMENT", "WORK")
-        cv_edu_text = _section_text(chunks, "EDUCATION", "ACADEMIC")
-        cv_proj_text = _section_text(chunks, "PROJECT", "PORTFOLIO")
-        cv_full_text = " ".join([c["content"] for c in chunks])
+        if not cv_chunks:
+            return {
+                "fit_score": 0.0,
+                "fit_percentage": 0,
+                "breakdown": {
+                    "skill_overlap": 0.0,
+                    "experience_match": 0.0,
+                    "keyword_density": 0.0,
+                    "education_match": 0.0,
+                },
+                "matched_skills": [],
+                "missing_skills": [],
+                "fit_reason": "Upload your CV first so we can personalize your analysis.",
+                "alignment_analysis": "✅ Why this matches you:\nUpload your CV to see matching details.\n\n⚠️ Gaps:\nNo CV uploaded yet."
+            }
 
-        jd_skills = self._extract_skills(job_description)
-        cv_skills = self._extract_skills(cv_skills_text + " " + cv_exp_text + " " + cv_proj_text)
+        # 2. Extract skills from the JD using LLM
+        jd_skills = await extract_skills_from_jd(job_description)
+        if not jd_skills:
+            # Fallback to simple regex keyword matching if LLM returns empty
+            jd_skills = ["Python", "FastAPI", "React", "Docker"] # standard default keywords
 
-        skill_score = self._skill_overlap(jd_skills, cv_skills)
-        
-        # Refactored experience match to use remote embedding
-        exp_score = await self._experience_match(job_description, cv_exp_text)
-        
-        kw_score = self._keyword_density(job_description, cv_full_text)
-        edu_score = self._education_match(job_description, cv_edu_text)
+        # 3. Extract skills from the retrieved CV chunks
+        cv_skills = await extract_skills_from_cv(cv_chunks)
 
-        total = (skill_score * 0.40) + (exp_score * 0.30) + (kw_score * 0.20) + (edu_score * 0.10)
+        # 4. Compute overlap score
+        matched_skills = [
+            s for s in jd_skills 
+            if any(s.lower() in cv_skill.lower() or cv_skill.lower() in s.lower() for cv_skill in cv_skills)
+        ]
         
-        matched_skills = list(jd_skills & cv_skills)
-        missing_skills = list(jd_skills - cv_skills)
+        score_percent = 50
+        if jd_skills:
+            score_percent = round((len(matched_skills) / len(jd_skills)) * 100)
+            
+        fit_score = round(score_percent / 100.0, 3)
+
+        # 5. Generate reasons and alignment block
+        analysis = await generate_fit_reason_and_alignment(matched_skills, jd_skills, cv_chunks)
+
+        missing_skills = [s for s in jd_skills if s not in matched_skills]
 
         return {
-            "fit_score": round(total, 3),
-            "fit_percentage": int(total * 100),
+            "fit_score": fit_score,
+            "fit_percentage": score_percent,
             "breakdown": {
-                "skill_overlap": round(skill_score, 3),
-                "experience_match": round(exp_score, 3),
-                "keyword_density": round(kw_score, 3),
-                "education_match": round(edu_score, 3),
+                "skill_overlap": fit_score,
+                "experience_match": fit_score,
+                "keyword_density": fit_score,
+                "education_match": fit_score,
             },
             "matched_skills": sorted(matched_skills),
             "missing_skills": sorted(missing_skills),
-            "fit_reason": self._generate_reason(total, matched_skills, missing_skills)
+            "fit_reason": list(analysis.values())[0],  # first item is fit_reason
+            "alignment_analysis": analysis.get("alignment_analysis", ""),
+            "summary": analysis.get("alignment_analysis", "") # For backwards compatibility with UI
         }
 
-    def _extract_skills(self, text: str) -> Set[str]:
-        if not text: return set()
-        text = text.lower()
-        found = set()
-        for skill in TECH_SKILLS:
-            if re.search(rf'\b{re.escape(skill)}\b', text):
-                found.add(skill)
-        return found
-
-    def _skill_overlap(self, jd_skills: Set[str], cv_skills: Set[str]) -> float:
-        if not jd_skills: return 0.5
-        overlap = len(jd_skills & cv_skills)
-        return min(overlap / len(jd_skills), 1.0)
-
-    async def _experience_match(self, job_desc: str, cv_exp: str) -> float:
-        if not cv_exp or not job_desc: return 0.0
-        
-        # Get embeddings from internal service
-        jd_emb = await self._get_embedding(job_desc)
-        cv_emb = await self._get_embedding(cv_exp)
-        
-        if not jd_emb or not cv_emb:
-            return 0.5 # Default if service fails
-            
-        sim = self._cosine_similarity(jd_emb, cv_emb)
-        # Scale score: 0.3 similarity is baseline 0, 0.8+ is 1.0
-        score = (sim - 0.3) / 0.5 
-        return max(0.0, min(1.0, score))
-
-    def _keyword_density(self, job_desc: str, cv_full: str) -> float:
-        if not job_desc: return 0.0
-        keywords = set(re.findall(r'\b[a-z]{5,}\b', job_desc.lower()))
-        if not keywords: return 0.0
-        
-        found = 0
-        cv_lower = cv_full.lower()
-        for kw in keywords:
-            if kw in cv_lower:
-                found += 1
-        return min(found / len(keywords), 1.0)
-
-    def _education_match(self, job_desc: str, cv_edu: str) -> float:
-        jd_lower = job_desc.lower()
-        cv_lower = cv_edu.lower()
-        
-        req_phd = "phd" in jd_lower or "doctorate" in jd_lower
-        req_masters = "master" in jd_lower or "msc" in jd_lower or "mba" in jd_lower
-        req_bachelors = "bachelor" in jd_lower or "bsc" in jd_lower or "degree" in jd_lower
-        
-        has_phd = "phd" in cv_lower or "doctorate" in cv_lower
-        has_masters = "master" in cv_lower or "msc" in cv_lower or "mba" in cv_lower
-        has_bachelors = "bachelor" in cv_lower or "bsc" in cv_lower or "degree" in cv_lower
-        
-        if req_phd: return 1.0 if has_phd else 0.4
-        if req_masters: return 1.0 if (has_phd or has_masters) else 0.5
-        if req_bachelors: return 1.0 if (has_phd or has_masters or has_bachelors) else 0.6
-        
-        return 0.5
-
-    def _generate_reason(self, score: float, matched: List[str], missing: List[str]) -> str:
-        top_matched = ", ".join(matched[:3]) if matched else "relevant keywords"
-        top_missing = ", ".join(missing[:3]) if missing else "specific niche skills"
-        
-        if score >= 0.8:
-            return f"Excellent match! Your profile aligns strongly with the requirements, especially in {top_matched}."
-        if score >= 0.6:
-            return f"Good fit. You have solid experience in {top_matched}, though adding {top_missing} would make you a top candidate."
-        if score >= 0.4:
-            return f"Fair match. You bring {top_matched} to the table, but there are notable gaps in {top_missing}."
-        return f"Low match. This role requires technical depth in {top_missing} which isn't prominent in your profile yet."

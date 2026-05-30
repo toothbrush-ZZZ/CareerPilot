@@ -47,7 +47,11 @@ BENCHMARK QUERY TYPES you must handle with structured output:
    **Milestones & checkpoints:** ...
 
 4. COVER LETTER — "Draft a cover letter for [job]"
-   → Redirect the user to the Cover Letter tab if they want a full generation.
+   If the user asks you to draft a cover letter (especially for the currently selected job or a job found in the session), generate a professional, personalized cover letter grounded ONLY in the user's CV chunks.
+   Always output the cover letter in this exact format:
+   ### Cover Letter for [Job Title] at [Company]
+   ---
+   [Cover letter content here, keeping it under 350 words, grounded in candidate's experience, with no placeholders like [Your Name]]
 
 CV CONTEXT (retrieved for this query):
 {cv_context}
@@ -58,10 +62,16 @@ async def chat(request: ChatRequest, user: CurrentUser):
     user_id = user["user_id"]
     from app.core.database import get_db
     
-    async with get_db(user_id) as db:
-        context_chunks = await cv_service.search_cv(request.message, user_id, db, limit=5)
+    try:
+        async with get_db(user_id) as db:
+            context_chunks = await cv_service.search_cv(request.message, user_id, db, limit=5)
+    except Exception as e:
+        logger.error(f"CV search failed: {e}")
+        context_chunks = []
     
     cv_context = "\n\n".join([f"[{c['section']}]\n{c['content']}" for c in context_chunks])
+    if not cv_context:
+        cv_context = "No CV data available. The user hasn't uploaded a CV yet."
     
     redis_client = await redis.get_redis()
     history_key = f"chat_history:{user_id}:{request.session_id}"
@@ -72,13 +82,25 @@ async def chat(request: ChatRequest, user: CurrentUser):
     
     full_system_prompt = SYSTEM_PROMPT.format(cv_context=cv_context)
     
+    if request.last_search_results:
+        full_system_prompt += "\n\n--- RECENT JOB SEARCH RESULTS (from this session) ---\n"
+        for i, job in enumerate(request.last_search_results):
+            full_system_prompt += f"Job {i + 1}: {job.get('role') or job.get('title')} at {job.get('company')} | {job.get('location')} | Fit: {job.get('fit_percentage') or job.get('fitScore') or 50}%\n"
+            full_system_prompt += f"  Deadline: {job.get('deadline')} | Salary: {job.get('salary_range') or job.get('salaryRange')}\n"
+            
+    if request.selected_job:
+        full_system_prompt += "\n\n--- CURRENTLY SELECTED JOB ---\n"
+        full_system_prompt += json.dumps(request.selected_job, indent=2)
+    
     from app.services import llm_factory
     
     messages_for_ai = []
     for msg in history:
         messages_for_ai.append({"role": msg.role, "content": msg.content})
         
+    logger.info(f"Generating AI response for user {user_id} with {len(messages_for_ai)} messages")
     ai_response = await llm_factory.get_ai_response(messages_for_ai, full_system_prompt)
+    logger.info(f"AI response generated: {len(ai_response)} chars")
 
     history.append(ChatMessage(role="assistant", content=ai_response))
     if len(history) > 20: history = history[-20:]

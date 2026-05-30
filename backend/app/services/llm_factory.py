@@ -85,15 +85,31 @@ async def get_ai_response(messages: List[Dict[str, str]], system_prompt: str) ->
     If API keys are provided: Groq -> Gemini -> Ollama
     If no keys: Ollama
     """
+    logger.info(f"AI providers configured - Groq: {bool(settings.GROQ_API_KEY)}, Gemini: {bool(settings.GEMINI_API_KEY)}, Ollama: {settings.OLLAMA_URL}")
+    
     if settings.GROQ_API_KEY:
+        logger.info("Trying Groq provider...")
         response = await call_groq(messages, system_prompt)
-        if response: return response
+        if response:
+            logger.info("Groq provider succeeded")
+            return response
+        logger.warning("Groq provider failed")
         
     if settings.GEMINI_API_KEY:
+        logger.info("Trying Gemini provider...")
         response = await call_gemini(messages, system_prompt)
-        if response: return response
+        if response:
+            logger.info("Gemini provider succeeded")
+            return response
+        logger.warning("Gemini provider failed")
         
+    logger.info("Trying Ollama provider...")
     response = await call_ollama(messages, system_prompt)
-    if response: return response
+    if response:
+        logger.info("Ollama provider succeeded")
+        return response
+    logger.warning("Ollama provider failed")
 
-    return "I'm sorry, I'm having trouble connecting to my AI engines. Please check your API keys or Ollama status."
+    error_msg = "I'm sorry, I'm having trouble connecting to my AI engines. Please check your API keys or Ollama status."
+    logger.error("All AI providers failed")
+    return error_msg

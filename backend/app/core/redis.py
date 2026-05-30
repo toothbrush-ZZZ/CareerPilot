@@ -11,7 +11,14 @@ class RedisManager:
 
     async def connect(self):
         if not self.client:
-            self.client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+            try:
+                self.client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                # Test connection
+                await self.client.ping()
+            except Exception as e:
+                logger = __import__('logging').getLogger(__name__)
+                logger.error(f"Failed to connect to Redis: {e}")
+                raise
 
     async def disconnect(self):
         if self.client:

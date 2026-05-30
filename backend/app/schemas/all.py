@@ -19,6 +19,8 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     session_id: str
+    last_search_results: Optional[List[Dict[str, Any]]] = None
+    selected_job: Optional[Dict[str, Any]] = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -26,10 +28,14 @@ class ChatResponse(BaseModel):
     history: List[ChatMessage]
 
 class CoverLetterRequest(BaseModel):
-    job_description: str
-    company_name: str
-    role_title: str
+    job_description: Optional[str] = None
+    company_name: Optional[str] = None
+    role_title: Optional[str] = None
     user_name: str = "the applicant"
+    mode: Optional[str] = "paste"
+    location: Optional[str] = None
+    requirements: Optional[str] = None
+    tone: Optional[str] = "formal"
 
 class CoverLetterResponse(BaseModel):
     letter_text: str

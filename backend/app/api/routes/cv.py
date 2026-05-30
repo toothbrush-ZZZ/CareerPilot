@@ -27,7 +27,7 @@ async def upload_cv(user: CurrentUser, file: UploadFile = File(...)):
         )
         
         user_dir = f"uploads/{user['user_id']}"
-        await anyio.to_thread.run_sync(os.makedirs, user_dir, 0o777, True)
+        await anyio.to_thread.run_sync(os.makedirs, user_dir, 0o755, True)
         
         file_path = f"{user_dir}/cv.pdf" if file.filename.lower().endswith('.pdf') else f"{user_dir}/cv.docx"
         

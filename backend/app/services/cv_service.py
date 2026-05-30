@@ -39,7 +39,14 @@ async def process_and_store_cv(
             logger.info(f"AI extracted location: {location}")
     
     texts_to_embed = [c["content"] for c in chunks]
-    embeddings = await embed_service.embed_texts(texts_to_embed)
+    logger.info(f"Attempting to generate embeddings for {len(texts_to_embed)} CV chunks")
+    try:
+        embeddings = await embed_service.embed_texts(texts_to_embed)
+        logger.info(f"Successfully generated {len(embeddings)} embeddings for user {user_id}")
+    except Exception as e:
+        logger.error(f"Embedding service failed for user {user_id}: {e}")
+        # Fallback: store chunks without embeddings
+        embeddings = None
     
     await db.execute(
         text("DELETE FROM cv_chunks WHERE user_id = :uid"),
@@ -47,19 +54,33 @@ async def process_and_store_cv(
     )
     
     for i, chunk in enumerate(chunks):
-        await db.execute(
-            text("""
-                INSERT INTO cv_chunks (user_id, section, content, embedding)
-                VALUES (:uid, :sec, :cont, CAST(:emb AS vector))
-            """),
-            {
-                "uid": user_id,
-                "sec": chunk["section"],
-                "cont": chunk["content"],
-                "emb": str(embeddings[i])
-            }
-        )
-        logger.debug(f"Inserted chunk {i} with embedding type {type(str(embeddings[i]))}")
+        if embeddings:
+            await db.execute(
+                text("""
+                    INSERT INTO cv_chunks (user_id, section, content, embedding)
+                    VALUES (:uid, :sec, :cont, CAST(:emb AS vector))
+                """),
+                {
+                    "uid": user_id,
+                    "sec": chunk["section"],
+                    "cont": chunk["content"],
+                    "emb": str(embeddings[i])
+                }
+            )
+            logger.debug(f"Inserted chunk {i} with embedding type {type(str(embeddings[i]))}")
+        else:
+            await db.execute(
+                text("""
+                    INSERT INTO cv_chunks (user_id, section, content)
+                    VALUES (:uid, :sec, :cont)
+                """),
+                {
+                    "uid": user_id,
+                    "sec": chunk["section"],
+                    "cont": chunk["content"]
+                }
+            )
+            logger.debug(f"Inserted chunk {i} without embedding (service unavailable)")
     
     if location:
         await db.execute(

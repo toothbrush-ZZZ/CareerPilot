@@ -81,6 +81,7 @@ def get_settings() -> Settings:
 
     print(f"POSTGRES_URL: {mask_url(settings.POSTGRES_URL)}")
     print(f"REDIS_URL: {mask_url(settings.REDIS_URL)}")
+    print(f"EMBED_URL: {settings.EMBED_URL}")
 
     print(f"OLLAMA_URL: {settings.OLLAMA_URL}")
     print(f"OLLAMA_MODEL: {settings.OLLAMA_MODEL}")

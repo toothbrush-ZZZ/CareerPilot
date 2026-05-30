@@ -39,21 +39,67 @@ async def generate_cover_letter(request: CoverLetterRequest, user: CurrentUser):
     user_id = user["user_id"]
     from app.core.database import get_db
     
+    # 1. Build a search query from whatever the user gave us
+    search_query = ""
+    if request.mode == "paste" and request.job_description:
+        search_query = request.job_description[:500]
+    else:
+        role_part = request.role_title or ""
+        req_part = request.requirements or ""
+        search_query = f"{role_part} {req_part}".strip()
+        
+    if not search_query:
+        search_query = "Software Engineer" # fallback
+        
     async with get_db(user_id) as db:
-        context_chunks = await cv_service.search_cv(request.job_description, user_id, db, limit=6)
-    
+        context_chunks = await cv_service.search_cv(search_query, user_id, db, limit=6)
+        
+    if not context_chunks:
+        # Check if user has a CV uploaded at all by querying all CV chunks
+        async with get_db(user_id) as db:
+            all_chunks = await cv_service.get_cv_chunks(user_id, db)
+        if not all_chunks:
+            raise HTTPException(status_code=400, detail="Upload your CV first so we can personalize your letter.")
+        context_chunks = all_chunks[:6]
+        
     cv_context = "\n\n".join([f"[{c['section']}]\n{c['content']}" for c in context_chunks])
     
-    full_prompt = COVER_LETTER_PROMPT.format(
-        cv_context=cv_context,
-        job_description=request.job_description,
-        company_name=request.company_name,
-        role_title=request.role_title,
-        user_name=request.user_name
-    )
-    
+    # 2. Build the generation prompt
+    if request.mode == "paste":
+        job_section = f"FULL JOB DESCRIPTION (user-pasted):\n{request.job_description}"
+    else:
+        job_section = f"""JOB DETAILS (user-described):
+- Title: {request.role_title or 'Not specified'}
+- Company: {request.company_name or 'Not specified'}
+- Location: {request.location or 'Not specified'}
+- Key Requirements: {request.requirements or 'Not specified'}"""
+
+    tone_instruction = "Use a formal, professional tone."
+    if request.tone == "conversational":
+        tone_instruction = "Use a warm, approachable tone while remaining professional."
+    elif request.tone == "enthusiastic":
+        tone_instruction = "Show genuine excitement for the role without being over the top."
+
+    prompt = f"""
+You are a professional cover letter writer. Write a personalized cover letter using ONLY the candidate's actual experience listed below — do not invent anything.
+
+{job_section}
+
+CANDIDATE'S RELEVANT EXPERIENCE (from their CV):
+{cv_context}
+
+Writing instructions:
+- {tone_instruction}
+- Open with a strong hook that names the role (and company if known)
+- Body: highlight 2–3 specific experiences from the CV that map to the job requirements
+- Close with a clear call to action
+- Length: 280–350 words
+- Do NOT use placeholder text like "[Your Name]" or "[Date]" — write the letter ready to send, signing off as "{request.user_name}"
+- If the company name is unknown or left blank, write naturally without referencing it (e.g., address "Dear Hiring Team" or similar, and never use placeholders like "[Company Name]")
+"""
+
     letter_text = await llm_factory.get_ai_response(
-        [{"role": "user", "content": full_prompt}],
+        [{"role": "user", "content": prompt}],
         "You write professional cover letters grounded only in the user's CV.",
     )
     if "trouble connecting" in letter_text.lower():
@@ -62,19 +108,11 @@ async def generate_cover_letter(request: CoverLetterRequest, user: CurrentUser):
             detail="AI service unavailable. Configure Ollama, GROQ_API_KEY, or GEMINI_API_KEY.",
         )
 
-    key_points = []
-    for chunk in context_chunks:
-        content = chunk["content"]
-        sentences = content.split(".")
-        for sent in sentences:
-            if len(sent) > 20 and sent[:20].lower() in letter_text.lower():
-                key_points.append(sent[:50] + "...")
-                break
-
     return CoverLetterResponse(
         letter_text=letter_text,
         word_count=len(letter_text.split()),
-        key_cv_points_used=key_points[:5]
+        key_cv_points_used=[],
+        tone=request.tone or "professional"
     )
 
 @router.post("/refine", response_model=CoverLetterResponse)

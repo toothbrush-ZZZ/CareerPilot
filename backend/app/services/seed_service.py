@@ -41,8 +41,7 @@ async def seed_demo_data(db) -> bool:
     Does NOT wipe existing data by default (unless called during a reset).
     """
     try:
-        # Ensure profiles table has RLS disabled to prevent login lockout
-        await db.execute(text("ALTER TABLE profiles DISABLE ROW LEVEL SECURITY"))
+        await db.execute(text("SET LOCAL row_security = off"))
         
         # Check if demo user exists
         result = await db.execute(
@@ -82,7 +81,6 @@ async def seed_demo_data(db) -> bool:
                     db
                 )
                 
-                # Copy demo CV text to uploads/
                 user_dir = f"uploads/{DEMO_USER_ID}"
                 os.makedirs(user_dir, exist_ok=True)
                 with open(f"{user_dir}/cv.txt", "w") as f:
