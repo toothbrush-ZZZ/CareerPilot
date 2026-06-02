@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
-from app.core.supabase import verify_jwt
+from app.core.jwt import verify_jwt
 
 security = HTTPBearer()
 
