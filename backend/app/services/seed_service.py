@@ -1,8 +1,9 @@
 import os
+import uuid
 import shutil
 import logging
 from sqlalchemy import text
-from datetime import date
+from datetime import date, datetime
 from app.services import auth_service, cv_service
 
 logger = logging.getLogger(__name__)
@@ -34,44 +35,60 @@ EDUCATION
 """
 
 async def seed_demo_data(db) -> bool:
-    """
-    Seeds/checks demo data.
-    If the demo user does not exist, it creates it.
-    If the demo user exists but has no data, it inserts sample data.
-    Does NOT wipe existing data by default (unless called during a reset).
-    """
     try:
-        await db.execute(text("SET LOCAL row_security = off"))
-        
-        # Check if demo user exists
+        try:
+            await db.execute(text("SET LOCAL row_security = off"))
+        except Exception:
+            pass
+
+        # Check if any user with the demo email exists
+        result = await db.execute(
+            text("SELECT id FROM profiles WHERE email = :email"),
+            {"email": DEMO_EMAIL}
+        )
+        email_row = result.first()
+        if email_row:
+            existing_id = email_row[0]
+            if existing_id != DEMO_USER_ID:
+                logger.info(f"Demo user exists with different ID {existing_id}. Deleting to re-seed...")
+                await db.execute(
+                    text("DELETE FROM profiles WHERE id = :uid"),
+                    {"uid": existing_id}
+                )
+                await db.flush()
+
         result = await db.execute(
             text("SELECT id FROM profiles WHERE id = :uid"),
             {"uid": DEMO_USER_ID}
         )
         user_row = result.first()
-        
+
         if not user_row:
             logger.info("Demo user does not exist, creating new profile.")
             hashed_pw = auth_service.hash_password(DEMO_PASSWORD)
             await db.execute(
                 text("""
-                    INSERT INTO profiles (id, email, password_hash, full_name, location_city, location_country)
-                    VALUES (:uid, :email, :pw, :name, 'San Francisco', 'USA')
+                    INSERT INTO profiles (id, email, password_hash, full_name, location_city, location_country, created_at)
+                    VALUES (:uid, :email, :pw, :name, 'San Francisco', 'USA', :created_at)
                 """),
                 {
                     "uid": DEMO_USER_ID,
                     "email": DEMO_EMAIL,
                     "pw": hashed_pw,
-                    "name": DEMO_NAME
+                    "name": DEMO_NAME,
+                    "created_at": datetime.utcnow()
                 }
             )
-            
-        # Seed CV chunks if none exist
-        cv_count_res = await db.execute(
-            text("SELECT COUNT(*) FROM cv_chunks WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        if cv_count_res.scalar() == 0:
+            await db.flush()
+
+        # Check if CV is stored in ChromaDB
+        from app.services.vector_store import _collection
+        try:
+            cv_count = _collection(DEMO_USER_ID).count()
+        except Exception:
+            cv_count = 0
+
+        if cv_count == 0:
             logger.info("Seeding demo CV chunks...")
             try:
                 await cv_service.process_and_store_cv(
@@ -80,23 +97,14 @@ async def seed_demo_data(db) -> bool:
                     DEMO_USER_ID,
                     db
                 )
-                
+
                 user_dir = f"uploads/{DEMO_USER_ID}"
                 os.makedirs(user_dir, exist_ok=True)
                 with open(f"{user_dir}/cv.txt", "w") as f:
                     f.write(DEMO_CV_TEXT)
             except Exception as e:
                 logger.error(f"Error seeding demo CV chunk embeddings: {e}")
-                # Fallback to simple insert without calling embedding service if service is offline
-                await db.execute(
-                    text("""
-                        INSERT INTO cv_chunks (user_id, section, content)
-                        VALUES (:uid, 'Summary', :content)
-                    """),
-                    {"uid": DEMO_USER_ID, "content": "Senior software engineer with 5+ years of experience building scalable AI solutions."}
-                )
 
-        # Seed Applications if none exist
         app_count_res = await db.execute(
             text("SELECT COUNT(*) FROM applications WHERE user_id = :uid"),
             {"uid": DEMO_USER_ID}
@@ -140,21 +148,23 @@ async def seed_demo_data(db) -> bool:
             for app in sample_apps:
                 await db.execute(
                     text("""
-                        INSERT INTO applications (user_id, job_title, company, location, job_url, status, notes)
-                        VALUES (:uid, :job, :comp, :loc, :url, :status, :notes)
+                        INSERT INTO applications (id, user_id, job_title, company, location, job_url, status, notes, applied_at, updated_at)
+                        VALUES (:id, :uid, :job, :comp, :loc, :url, :status, :notes, :applied_at, :updated_at)
                     """),
                     {
+                        "id": str(uuid.uuid4()),
                         "uid": DEMO_USER_ID,
                         "job": app["job_title"],
                         "comp": app["company"],
                         "loc": app["location"],
                         "url": app["job_url"],
                         "status": app["status"],
-                        "notes": app["notes"]
+                        "notes": app["notes"],
+                        "applied_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow()
                     }
                 )
 
-        # Seed Goals if none exist
         goals_count_res = await db.execute(
             text("SELECT COUNT(*) FROM goals WHERE user_id = :uid"),
             {"uid": DEMO_USER_ID}
@@ -170,47 +180,54 @@ async def seed_demo_data(db) -> bool:
             for goal in sample_goals:
                 await db.execute(
                     text("""
-                        INSERT INTO goals (user_id, text, due_date, completed)
-                        VALUES (:uid, :text, :due, :completed)
+                        INSERT INTO goals (id, user_id, text, due_date, completed, created_at)
+                        VALUES (:id, :uid, :text, :due, :completed, :created_at)
                     """),
                     {
+                        "id": str(uuid.uuid4()),
                         "uid": DEMO_USER_ID,
                         "text": goal["text"],
                         "due": goal["due_date"],
-                        "completed": goal["completed"]
+                        "completed": goal["completed"],
+                        "created_at": datetime.utcnow()
                     }
                 )
-            
+
+        await db.commit()
         return True
+
     except Exception as e:
+        await db.rollback()
         logger.error(f"Error seeding demo data: {e}")
         return False
 
 async def reset_demo_data(db) -> bool:
-    """
-    Clears all data associated with the stable demo account
-    and re-seeds it back to a pristine state.
-    """
     try:
         logger.info("Resetting demo data...")
-        
-        # Deleting profile (which will cascade to goals, cv_chunks, and applications)
+
         await db.execute(
             text("DELETE FROM profiles WHERE id = :uid"),
             {"uid": DEMO_USER_ID}
         )
-        
-        # Clean up files in uploads/
+        await db.commit()
+
+        # Clean up ChromaDB collection
+        from app.services.vector_store import delete_cv
+        try:
+            delete_cv(DEMO_USER_ID)
+        except Exception as cv_err:
+            logger.error(f"Error cleaning up demo CV collection: {cv_err}")
+
         user_dir = f"uploads/{DEMO_USER_ID}"
         if os.path.exists(user_dir):
             try:
                 shutil.rmtree(user_dir)
             except Exception as file_err:
                 logger.error(f"Error cleaning up demo upload directory: {file_err}")
-            
-        # Reseed everything!
+
         success = await seed_demo_data(db)
         return success
     except Exception as e:
+        await db.rollback()
         logger.error(f"Error resetting demo data: {e}")
         return False

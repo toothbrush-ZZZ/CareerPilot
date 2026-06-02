@@ -1,30 +1,37 @@
-from typing import List, Dict, Optional
+import os
+from datetime import datetime, timedelta
+from groq import Groq
+from typing import List, Optional
 
-class NudgeAgent:
-    def generate_nudges(self, stats: Dict, recent_jobs: List[Dict]) -> List[str]:
-        """
-        Generates proactive AI nudges based on user activity.
-        """
-        nudges = []
-        
-        # 1. No applications this week
-        if stats.get("this_week", 0) == 0:
-            job_suggestions = ", ".join([j.get("job_title", j.get("role", "Unknown")) for j in recent_jobs[:3]])
-            if job_suggestions:
-                nudges.append(f"You haven't applied this week! Check these matches: {job_suggestions}")
-            else:
-                nudges.append("You haven't applied this week! Try searching for some new roles today.")
+_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-        # 2. Streak reminder
-        if stats.get("total_applications", 0) > 0 and stats.get("this_week", 0) < 3:
-            nudges.append("Consistency is key. Aim for 3-5 applications a week to stay ahead.")
 
-        # 3. Goal progress
-        goals_done = stats.get("goals_completed", 0)
-        goals_total = stats.get("goals_total", 0)
-        if goals_total > 0 and goals_done < goals_total:
-            nudges.append(f"You've completed {goals_done}/{goals_total} goals. Keep checking them off!")
-        elif goals_total == 0:
-            nudges.append("Set a goal for this week to stay focused on your career progress.")
+def should_nudge(last_application_date: Optional[datetime]) -> bool:
+    if last_application_date is None:
+        return True
+    return datetime.utcnow() - last_application_date > timedelta(days=7)
 
-        return nudges[:3]
+
+def generate_nudge(cv_summary: str, recent_jobs: List[dict]) -> str:
+    job_list = "\n".join(
+        f"- {j['title']} at {j['company']} ({j['location']})"
+        for j in recent_jobs[:3]
+    )
+
+    prompt = f"""You are CareerPilot. The user hasn't applied to any jobs this week.
+Write a brief, encouraging nudge (2-3 sentences max) reminding them to apply,
+and mention these specific openings that match their profile:
+
+{job_list}
+
+User profile summary: {cv_summary[:300]}
+
+Be warm and motivating, not naggy."""
+
+    response = _client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=150,
+        temperature=0.8,
+    )
+    return response.choices[0].message.content
