@@ -62,6 +62,9 @@ export interface JobItem {
   fitScore?: number;
   fit_reason?: string;
   fitReason?: string;
+  matched_skills?: string[];
+  missing_skills?: string[];
+  reasoning?: string;
   summary?: string;
   salary_range?: string;
   salaryRange?: string;

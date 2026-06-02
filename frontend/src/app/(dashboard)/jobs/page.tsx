@@ -281,6 +281,11 @@ export default function JobHunter() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2.5 shrink-0">
+                        {job.fit_score !== undefined && (
+                          <div className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border ${getScoreColor(job.fit_score)}`}>
+                            {job.fit_score}% Fit
+                          </div>
+                        )}
                         {/* Ask Assistant button */}
                         <button
                           onClick={() => handleAskAssistant(job)}
@@ -309,6 +314,42 @@ export default function JobHunter() {
                     {/* Expandable description */}
                     {isExpanded && (
                       <div className="mt-5 border-t border-slate-100 dark:border-slate-800/60 pt-4 space-y-4 text-xs font-semibold text-slate-650 dark:text-slate-350">
+                        
+                        {job.reasoning && (
+                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
+                            <div className="flex items-center gap-1 text-slate-800 dark:text-slate-200 font-bold mb-2">
+                              <BookOpen className="h-4 w-4 text-indigo-400" /> AI Fit Analysis
+                            </div>
+                            <p className="whitespace-pre-line mb-3">{job.reasoning}</p>
+                            
+                            {(job.matched_skills && job.matched_skills.length > 0) && (
+                              <div className="mb-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Matched Skills</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {job.matched_skills.map((s, idx) => (
+                                    <span key={idx} className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                      ✓ {s}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {(job.missing_skills && job.missing_skills.length > 0) && (
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Missing Skills</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {job.missing_skills.map((s, idx) => (
+                                    <span key={idx} className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                      ✗ {s}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div>
                           <h4 className="font-bold text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-wider mb-2">Job Description</h4>
                           <p className="leading-relaxed whitespace-pre-line text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/30 p-3.5 border border-slate-100 dark:border-slate-800/40 rounded-xl font-medium">
