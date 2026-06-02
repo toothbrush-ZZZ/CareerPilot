@@ -26,14 +26,18 @@ export default function JobHunter() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'board' | 'evaluator'>('board');
   
-  // Search parameters
-  const [query, setQuery] = useState('');
-  const [expandedJobIndex, setExpandedJobIndex] = useState<number | null>(null);
+  const { 
+    lastSearchResults, 
+    lastSearchQuery: query, 
+    isSearching,
+    searchMessage,
+    setLastSearchResults, 
+    setLastSearchQuery: setQuery,
+    setIsSearching,
+    setSearchMessage
+  } = useJobStore();
 
-  // Search state (replacing react-query)
-  const [jobsList, setJobsList] = useState<JobItem[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchMessage, setSearchMessage] = useState('');
+  const [expandedJobIndex, setExpandedJobIndex] = useState<number | null>(null);
 
   // Manual fit form
   const [manualTitle, setManualTitle] = useState('');
@@ -48,24 +52,22 @@ export default function JobHunter() {
     error?: string;
   } | null>(null);
 
-  const { setLastSearchResults } = useJobStore();
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query) return;
     setExpandedJobIndex(null);
-    setSearchLoading(true);
+    setIsSearching(true);
     setSearchMessage('');
     
     try {
       const response = await jobsService.searchJobs(query);
-      setJobsList(response.jobs || []);
       setLastSearchResults(response.jobs || []);
     } catch (err) {
       console.error('Error searching jobs', err);
       setSearchMessage('Failed to fetch job postings. Please try again.');
     } finally {
-      setSearchLoading(false);
+      setIsSearching(false);
     }
   };
 
@@ -198,10 +200,10 @@ export default function JobHunter() {
               <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
                 <button
                   type="submit"
-                  disabled={searchLoading || !query}
+                  disabled={isSearching || !query}
                   className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
                 >
-                  {searchLoading ? (
+                  {isSearching ? (
                     <>
                       <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Searching job boards...
                     </>
@@ -216,7 +218,7 @@ export default function JobHunter() {
           </div>
 
           {/* Search Results Board */}
-          {searchLoading && (
+          {isSearching && (
             <div className="space-y-4 animate-pulse">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
@@ -232,9 +234,9 @@ export default function JobHunter() {
           )}
 
           {/* Job Items List */}
-          {!searchLoading && jobsList.length > 0 && (
+          {!isSearching && lastSearchResults.length > 0 && (
             <div className="space-y-4">
-              {jobsList.map((job, index) => {
+              {lastSearchResults.map((job, index) => {
                 const isExpanded = expandedJobIndex === index;
                 
                 return (
@@ -378,7 +380,7 @@ export default function JobHunter() {
             </div>
           )}
 
-          {!searchLoading && jobsList.length === 0 && (
+          {!isSearching && lastSearchResults.length === 0 && (
             <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
               <Search className="h-10 w-10 text-slate-350 dark:text-slate-700 mx-auto mb-3" />
               <h4 className="font-bold text-sm text-slate-650 dark:text-slate-455">Ready to Search</h4>
