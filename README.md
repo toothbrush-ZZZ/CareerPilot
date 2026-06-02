@@ -1,314 +1,113 @@
 # CareerPilot 🚀
 
-An AI-powered career management SaaS platform that aggregates job listings, evaluates resume fit, tracks applications, generates cover letters, and provides AI career counseling.
+AI-powered career co-pilot: resume intelligence, cover letters, job discovery, and productivity tracking in a single app.
 
-![CareerPilot](https://img.shields.io/badge/CareerPilot-AI%20Powered-blue)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+## 🎯 Demo Account
 
-## ✨ Features
-
-- **🔍 Live Job Hunting & Scraping**
-  - Real-time job aggregation from multiple sources (LinkedIn, Indeed, Glassdoor, BDJobs)
-  - AI-powered job matching based on your CV
-  - Location-aware search with postal code normalization
-
-- **📊 Kanban Pipeline Tracker**
-  - Organize applications in columns (Applied, Interviewing, Offer, Rejected)
-  - Track application status with notes and metadata
-  - Set and monitor career goals
-
-- **🤝 AI Career Assistant Chat**
-  - Personalized career advice based on your CV
-  - Skills gap analysis and learning recommendations
-  - Cover letter generation for specific jobs
-  - Mock interview practice
-
-- **📄 CV Processing & Analysis**
-  - Upload and parse PDF/DOCX resumes
-  - Automatic skill extraction and embedding
-  - Location detection from CV content
-  - Fit scoring against job descriptions
-
-- **🎯 Smart Job Ranking**
-  - Location-based job prioritization
-  - Skills match scoring
-  - Multi-source aggregation with deduplication
-
-## 🏗️ Architecture
-
-CareerPilot uses a modern, scalable architecture with RAG (Retrieval-Augmented Generation) at its core:
-
-- **Frontend**: Next.js 16+ with TypeScript, Tailwind CSS, and Shadcn/ui
-- **Backend**: FastAPI with Python, SQLAlchemy, and async PostgreSQL
-- **Database**: PostgreSQL with pgvector for vector similarity search
-- **Cache**: Redis for performance optimization
-- **AI**: Multi-provider strategy (Groq, Gemini, Ollama) with fallback
-- **Infrastructure**: Docker Compose for containerized deployment
-
-### Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              FRONTEND (Next.js)                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Landing    │  │   Dashboard  │  │  Job Search  │  │  AI Chat     │  │
-│  │    Page      │  │              │  │              │  │              │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-│         │                 │                 │                 │           │
-│         └─────────────────┴─────────────────┴─────────────────┘           │
-│                                   │                                        │
-│                           HTTP/REST API                                    │
-└───────────────────────────────────┼────────────────────────────────────────┘
-                                    │
-┌───────────────────────────────────┼────────────────────────────────────────┐
-│                                   │                                        │
-│  ┌────────────────────────────────▼────────────────────────────────┐      │
-│  │                      BACKEND (FastAPI)                           │      │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │      │
-│  │  │   Auth      │  │   CV        │  │   Jobs      │  │ Assistant │  │      │
-│  │  │  Middleware │  │  Service    │  │  Service    │  │  Service  │  │      │
-│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │      │
-│  │         │                 │                 │               │         │      │
-│  │  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐  ┌─────▼─────┐  │      │
-│  │  │  Job Hunter │  │  Fit Scorer │  │  LLM Factory│  │  Tracker  │  │      │
-│  │  │    Agent    │  │             │  │             │  │  Service  │  │      │
-│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │      │
-│  └─────────┼─────────────────┼─────────────────┼─────────────────┼───────┘      │
-│            │                 │                 │                 │             │
-│  ┌─────────▼─────────────────▼─────────────────▼─────────────────▼───────┐  │
-│  │                     SERVICE LAYER                                    │  │
-│  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐          │  │
-│  │  │  Auth     │  │  Embed    │  │  Seed     │  │  Nudge    │          │  │
-│  │  │  Service  │  │  Service  │  │  Service  │  │  Agent    │          │  │
-│  │  └───────────┘  └───────────┘  └───────────┘  └───────────┘          │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                    │                                        │
-└────────────────────────────────────┼────────────────────────────────────────┘
-                                     │
-┌────────────────────────────────────┼────────────────────────────────────────┐
-│                                     │                                        │
-│         ┌───────────────────────────┴───────────────────────────┐          │
-│         │                                                       │          │
-│  ┌──────▼──────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──▼───────┐ │
-│  │ PostgreSQL  │  │  Redis   │  │  Embed   │  │  Ollama  │  │  External │ │
-│  │ + pgvector  │  │  Cache   │  │  Service │  │   (AI)   │  │   APIs    │ │
-│  │             │  │          │  │          │  │          │  │           │ │
-│  │ - Profiles  │  │ - Sessions│  │ - Vector │  │ - Llama  │  │ - Groq    │ │
-│  │ - CV Chunks │  │ - Cache   │  │   Embed  │  │   3.2    │  │ - Gemini  │ │
-│  │ - Jobs      │  │ - History │  │          │  │          │  │ - JobSpy  │ │
-│  │ - Tracker   │  │          │  │          │  │          │  │ - Remotive│ │
-│  └─────────────┘  └──────────┘  └──────────┘  └──────────┘  └───────────┘ │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Key Design Decisions
-
-**RAG Architecture**
-- User's CV is the single source of truth
-- All AI responses are grounded in actual user data
-- Vector similarity search for semantic matching
-- Prevents hallucination of user background
-
-**Multi-Provider AI Strategy**
-- Provider fallback chain ensures reliability
-- Local Ollama instance for privacy-sensitive operations
-- Groq for fast real-time responses
-- Gemini for complex reasoning tasks
-
-**Scalability**
-- Async/await throughout for high throughput
-- Redis caching reduces database load
-- Connection pooling for database
-- Stateless JWT authentication
-- Containerized services for horizontal scaling
-
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Git
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd CareerPilot
-   ```
-
-2. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Start all services**
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-
-### Demo Account
-
-Use the instant demo feature on the landing page or login with:
 - Email: `demo@careerpilot.ai`
 - Password: `demopassword`
 
-## 📚 Documentation
+## Overview
 
-- [Stack Report](./STACK_REPORT.md) - Technology stack justification and architectural decisions
-- [Dependencies & Setup](./DEPENDENCIES.md) - Comprehensive setup instructions and dependency list
-- [API Documentation](http://localhost:8000/docs) - Interactive API documentation (after starting backend)
+CareerPilot helps users manage their job search by combining CV parsing and retrieval-augmented generation (RAG) with job scraping and productivity tools. It provides an assistant grounded in the user's CV, job fit scoring, and a tracker for applications and goals.
 
-## 🔧 Configuration
+## Key Features
 
-### Required Environment Variables
+- Job discovery with fit scoring (scraped job cards + AI scoring)
+- CV upload and RAG: PDF/DOCX parsing → chunking → embeddings → semantic search
+- Conversational AI assistant for cover letters, interview prep, and skill-gap analysis
+- Application tracker and dashboard with nudges and progress metrics
 
-```bash
-# Database
-POSTGRES_URL=postgresql+asyncpg://cpuser:cppass@db:5432/careerpilot
+## Architecture
 
-# Redis
-REDIS_URL=redis://redis:6379
+- Frontend: Next.js, TypeScript, Tailwind CSS
+- Backend: FastAPI, SQLite, ChromaDB (in-process)
+- AI: Groq (LLM) for scoring and assistant responses
+- Job scraping: python-jobspy (integrated scraper)
 
-# Authentication
-JWT_SECRET=your_jwt_secret_here
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
-
-# Embedding Service
-EMBED_URL=http://embed:8001
-
-# AI Services (Ollama - Required)
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:latest
-```
-
-### Optional Environment Variables
+## Quick Start
 
 ```bash
-# AI Services (Cloud Providers)
-GROQ_API_KEY=your_groq_api_key
-GEMINI_API_KEY=your_gemini_api_key
-
-# Supabase (for social login)
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
+git clone <repo> && cd CareerPilot
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
+docker-compose up -d
+# Open the frontend at http://localhost:3000 and backend at http://localhost:8000
 ```
 
-See [.env.example](./.env.example) for all available options.
+## Environment Variables
 
-## 📁 Project Structure
+> **Note:** For security reasons, API keys are not included in this repository. Please copy `.env.example` to `.env` and insert your `GROQ_API_KEY` and `JWT_SECRET`. You can use your own Groq API key (it's free at console.groq.com).
 
-```
-CareerPilot/
-├── backend/              # FastAPI backend
-│   ├── app/
-│   │   ├─d─ agents/      # AI agent implementations
-│   │   ├── api/         # API routes
-│   │   ├── core/        # Core configuration
-│   │   ├── jobs/        # Job scraping logic
-│   │   ├── services/    # Business logic
-│   │   └── main.py      # Application entry
-├── frontend/            # Next.js frontend
-│   ├── src/
-│   │   ├── app/         # Next.js app directory
-│   │   ├── components/  # React components
-│   │   ├── services/    # API client services
-│   │   └── store/       # State management
-├── embed/               # Embedding service
-│   ├── app/             # FastAPI embedding service
-│   └── requirements.txt
-├── db/                  # Database initialization
-├── docker-compose.yml    # Service orchestration
-└── README.md            # This file
+Required variables:
+
+```bash
+GROQ_API_KEY=your_groq_api_key_here
+JWT_SECRET=change_this_to_any_random_32_char_string
+DATABASE_URL=sqlite+aiosqlite:///./data/careerpilot.db
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## 🔌 API Endpoints
+## Local Development (without Docker)
 
-### Authentication
-- `POST /auth/signup` - Register new user
-- `POST /auth/login` - User login
-- `POST /auth/change-password` - Change password
-- `DELETE /auth/delete-account` - Delete account
+Backend:
 
-### Jobs
-- `POST /jobs/search` - Search for jobs
-- `POST /jobs/compute-fit` - Compute job fit score
-
-### CV
-- `POST /cv/upload` - Upload CV
-- `GET /cv/status` - Check CV status
-- `DELETE /cv/delete` - Delete CV
-- `POST /cv/build` - Build CV
-
-### Profile
-- `GET /profile` - Get user profile
-- `PUT /profile` - Update profile
-
-### Dashboard
-- `GET /dashboard/stats` - Get dashboard statistics
-
-### Tracker
-- `POST /tracker/applications` - Create application
-- `GET /tracker/applications` - Get applications
-- `PUT /tracker/applications/{id}` - Update application
-- `DELETE /tracker/applications/{id}` - Delete application
-- `POST /tracker/goals` - Create goal
-- `GET /tracker/goals` - Get goals
-
-### Assistant
-- `POST /assistant/chat` - Chat with AI assistant
-- `DELETE /assistant/session/{id}` - Clear chat session
-
-## 🧪 Testing
-
-### Backend Tests
 ```bash
 cd backend
-pytest
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-### Frontend Tests
+Frontend:
+
 ```bash
 cd frontend
-npm test
+npm install
+npm run dev
 ```
 
-## 🚢 Deployment
+## Tech Stack
 
-### Production Deployment
+- Frontend: Next.js + TypeScript
+- Backend: FastAPI
+- Database: SQLite + aiosqlite
+- Vector DB: ChromaDB (on-disk persistence)
+- AI provider: Groq
+- CV parsing: pdfplumber + python-docx
 
-1. Configure production environment variables
-2. Build production images
-   ```bash
-   docker-compose -f docker-compose.prod.yml build
-   ```
-3. Deploy to production
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
+## 🧪 Evaluation Suite
 
-### Monitoring
+8 documented test cases covering all four pillars. See [evals/TEST_CASES.md](./evals/TEST_CASES.md).
 
-- Application logs: `docker-compose logs`
-- Database logs: `docker-compose logs db`
-- Redis logs: `docker-compose logs redis`
+To run automated checks:
 
-## 🤝 Contributing
+```bash
+# 1. Start the backend
+docker-compose up -d
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+# 2. Set your backend URL
+export BACKEND_URL=http://localhost:8000   # or your deployed URL
+
+# 3. Get an auth token using the demo account
+TOKEN=$(curl -s -X POST $BACKEND_URL/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@careerpilot.ai","password":"demopassword"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 4. Run evals
+export AUTH_TOKEN=$TOKEN
+python evals/run_evals.py
+```
+
+## 📐 System Design
+
+See [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) for the architecture diagram, scaling analysis (0→100→1k→10k users), cost estimates (~$0.01/user/month at scale), and bottleneck mitigations.
+
+## 📋 API Reference
+
+See [API.md](./API.md) for the full endpoint reference. Interactive Swagger docs are available at `$BACKEND_URL/docs` when the backend is running.
+
