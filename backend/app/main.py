@@ -1,54 +1,62 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.core.redis import get_redis, close_redis
+from app.core.database import init_db
+from app.jobs.scraper import _executor  # FIX 6
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await get_redis()
+    await init_db()
     
-    # Seed stable demo data on startup (creates stable demo account with sample data if missing)
-    from app.core.database import get_db
-    from app.services.seed_service import seed_demo_data, DEMO_USER_ID
-    import logging
+    # Auto-seed the demo user if not present
+    from app.core.database import AsyncSessionLocal
+    from app.services.seed_service import seed_demo_data
     try:
-        async with get_db(DEMO_USER_ID) as db:
-            await seed_demo_data(db)
-        logging.getLogger("uvicorn").info("Demo data seeding checked/completed successfully on startup.")
+        async with AsyncSessionLocal() as session:
+            await seed_demo_data(session)
     except Exception as e:
-        logging.getLogger("uvicorn").error(f"Failed to seed demo data on startup: {e}")
-        
+        import logging
+        logging.getLogger(__name__).error(f"Failed to auto-seed demo data on startup: {e}")
+
     yield
-    await close_redis()
+    _executor.shutdown(wait=False)
+
 
 app = FastAPI(
     title="CareerPilot API",
-    version="1.0.0",
-    lifespan=lifespan
+    version="2.0.0",
+    lifespan=lifespan,
 )
+
+import os
+
+_cors_origins = [o.strip() for o in os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000"
+).split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"status": "ok", "service": "careerpilot-api"}
+
+
 @app.get("/health")
 async def health():
-    try:
-        from app.core.redis import redis_manager
-        ping = await redis_manager.client.ping()
-        return {"status": "ok", "redis": "ok" if ping else "error"}
-    except Exception:
-        return {"status": "error", "redis": "Service unavailable"}
+    return {"status": "ok"}
 
-from app.api.routes import profile, cv, jobs, tracker, dashboard, auth, debug
-from app.api import assistant, cover_letter
+
+from app.api.routes import profile, cv, jobs, tracker, dashboard, auth
+from app.api import assistant
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(profile.router, prefix="/api/v1")
@@ -57,5 +65,3 @@ app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(tracker.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(assistant.router, prefix="/api/v1")
-app.include_router(cover_letter.router, prefix="/api/v1")
-app.include_router(debug.router, prefix="/api/v1")
