@@ -15,7 +15,6 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
             search_term=query,
             location=location,
             results_wanted=limit,
-            hours_old=72,
             is_remote=False
         )
         
@@ -24,7 +23,6 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
             search_term=query,
             location=location,
             results_wanted=limit,
-            hours_old=72,
             is_remote=True
         )
         

@@ -263,11 +263,12 @@ export default function JobHunter() {
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-slate-400" /> {job.location}
                           </span>
-                          {job.salary && (
-                            <span className="flex items-center gap-1">
-                              💵 {job.salary}
-                            </span>
-                          )}
+                          <span className="flex items-center gap-1">
+                            💵 {job.salary || job.salary_range || 'Salary: Not specified'}
+                          </span>
+                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-500/90">
+                            ⏳ {job.deadline ? `Deadline: ${job.deadline}` : 'Deadline: Not specified'}
+                          </span>
                           {job.date_posted && (
                             <span className="flex items-center gap-1">
                               📅 Posted: {job.date_posted}
