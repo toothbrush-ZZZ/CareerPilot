@@ -65,6 +65,7 @@ backend/data/
 # Temporary files
 search_results.json
 backend/body.json
+Codesprint_poridhi.md
 
 # Security
 *.pem
