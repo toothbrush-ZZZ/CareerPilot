@@ -172,11 +172,12 @@ def extract_location_from_cv(text: str) -> Optional[str]:
 def cv_builder_to_text(data: Dict) -> str:
     lines = []
     p = data.get("personal", {})
-    lines.append(p.get("name", ""))
+    name = p.get("name") or data.get("name") or ""
+    lines.append(name)
     contact_parts = [
-    p.get("location"),
-    p.get("email"),
-    p.get("phone")
+        p.get("location") or data.get("location"),
+        p.get("email") or data.get("email"),
+        p.get("phone") or data.get("phone")
     ]
     lines.append(" | ".join(filter(None, contact_parts)))
     
