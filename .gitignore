@@ -51,15 +51,16 @@ yarn-error.log*
 # Docker
 .docker_images_built
 
-# Application data
+# Application data & uploads
 uploads/
 backend/uploads/
 embed_cache/
 
-# Database
+# SQLite databases & Chroma vector store
 *.db
 *.sqlite
 *.sqlite3
+backend/data/
 
 # Temporary files
 search_results.json
@@ -70,6 +71,4 @@ backend/body.json
 *.key
 *.cert
 *.crt
-JUDGE_SETUP_PRIVATE.md
-
 

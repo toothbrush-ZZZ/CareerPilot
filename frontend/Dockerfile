@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --frozen-lockfile || npm install
+RUN npm install --legacy-peer-deps || npm install
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000
