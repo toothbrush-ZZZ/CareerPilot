@@ -80,7 +80,7 @@ export default function LoginPage() {
 
         {/* Demo Highlight Banner */}
         <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-sky-500/10 to-indigo-500/10 border border-sky-500/20 text-center">
-          <p className="text-xs font-semibold text-sky-400 mb-2 uppercase tracking-wide">💡 Express Hackathon Preview</p>
+          <p className="text-xs font-semibold text-sky-400 mb-2 uppercase tracking-wide">💡 Express Preview</p>
           <p className="text-slate-300 text-xs mb-3">
             Explore the dashboard immediately with the fully seeded demo data account.
           </p>

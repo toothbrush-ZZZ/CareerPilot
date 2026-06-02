@@ -1,9 +1,6 @@
 import { useAuthStore } from '@/store/useAuthStore';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  || (typeof window !== 'undefined'
-    ? 'http://localhost:8000'
-    : 'http://backend:8000'); // Use public override first, then local browser fallback, then Docker network fallback during SSR
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number>;
@@ -18,7 +15,6 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { params, bodyData, isMultipart, headers: customHeaders, ...rest } = options;
 
-  // Build URL with query parameters
   let url = `${API_BASE}${path}`;
   if (params) {
     const searchParams = new URLSearchParams();
@@ -33,7 +29,6 @@ export async function apiRequest<T>(
     }
   }
 
-  // Retrieve token
   let token = useAuthStore.getState().token;
   if (!token && typeof window !== 'undefined') {
     token = localStorage.getItem('cp_token');
@@ -48,34 +43,38 @@ export async function apiRequest<T>(
   if (bodyData !== undefined) {
     if (isMultipart) {
       body = bodyData;
-      // Note: Fetch sets boundary automatically for FormData, do not set Content-Type manual
     } else {
       headers.set('Content-Type', 'application/json');
       body = JSON.stringify(bodyData);
     }
   }
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body,
-    ...rest,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body,
+      ...rest,
+    });
+  } catch (networkError) {
+    console.error('[api] network error:', networkError);
+    throw new Error('Network error — check your connection and try again.');
+  }
 
   if (!response.ok) {
-    let errorDetail = 'API Request Failed';
+    let errorDetail = `Request failed (${response.status})`;
     try {
       const errRes = await response.json();
       errorDetail = errRes.detail || errRes.message || errorDetail;
     } catch {
-      // ignore
+      errorDetail = response.statusText || errorDetail;
     }
-    
-    // Auto-logout on 401
+
     if (response.status === 401) {
       useAuthStore.getState().logout();
     }
-    
+
     throw new Error(errorDetail);
   }
 
@@ -83,7 +82,12 @@ export async function apiRequest<T>(
     return {} as T;
   }
 
-  return response.json() as Promise<T>;
+  try {
+    return await response.json() as T;
+  } catch (parseError) {
+    console.error('[api] JSON parse error:', parseError);
+    throw new Error('Unexpected response format from server.');
+  }
 }
 
 export const api = {

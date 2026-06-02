@@ -14,7 +14,6 @@ export const useUIStore = create<UIState>((set) => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('cp_theme');
       if (stored) return stored === 'dark';
-      // Default to dark mode for a rich premium aesthetic
       return true;
     }
     return true;

@@ -28,6 +28,7 @@ export const authService = {
     full_name: string;
     location_city: string;
     location_country: string;
+    desired_role?: string;
   }): Promise<{ status: string; message: string }> => {
     return api.post<{ status: string; message: string }>('/api/v1/profile', data);
   },

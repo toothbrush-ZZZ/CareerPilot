@@ -1,28 +1,26 @@
 import { api } from './api';
-import { ChatMessage } from '@/types';
 
 interface ChatResponse {
-  response: string;
+  reply: string;
   session_id: string;
-  history: ChatMessage[];
 }
 
 export const assistantService = {
   chat: async (
     message: string,
     sessionId: string,
-    lastSearchResults?: any[],
-    selectedJob?: any | null
+    jobTitle?: string,
+    jobDescription?: string
   ): Promise<ChatResponse> => {
     return api.post<ChatResponse>('/api/v1/assistant/chat', {
       message,
       session_id: sessionId,
-      last_search_results: lastSearchResults,
-      selected_job: selectedJob
+      job_title: jobTitle,
+      job_description: jobDescription
     });
   },
 
-  clearSession: async (sessionId: string): Promise<{ status: string }> => {
-    return api.delete<{ status: string }>(`/api/v1/assistant/session/${sessionId}`);
+  clearSession: async (sessionId: string): Promise<{ cleared: boolean }> => {
+    return api.delete<{ cleared: boolean }>(`/api/v1/assistant/session/${sessionId}`);
   },
 };

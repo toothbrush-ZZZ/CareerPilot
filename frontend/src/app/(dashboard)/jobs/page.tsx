@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { jobsService } from '@/services/jobs';
 import { useJobStore } from '@/store/useJobStore';
@@ -19,7 +18,8 @@ import {
   RefreshCw,
   SlidersHorizontal,
   FlameKindling,
-  Mail
+  Mail,
+  Bot
 } from 'lucide-react';
 
 export default function JobHunter() {
@@ -30,46 +30,59 @@ export default function JobHunter() {
   const [query, setQuery] = useState('');
   const [expandedJobIndex, setExpandedJobIndex] = useState<number | null>(null);
 
+  // Search state (replacing react-query)
+  const [jobsList, setJobsList] = useState<JobItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
+
   // Manual fit form
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualCompany, setManualCompany] = useState('');
   const [manualDescription, setManualDescription] = useState('');
-  const [manualFitResult, setManualFitResult] = useState<{ score: number; summary: string } | null>(null);
+  const [manualFitLoading, setManualFitLoading] = useState(false);
+  const [manualFitResult, setManualFitResult] = useState<{
+    score?: number;
+    matched_skills?: string[];
+    missing_skills?: string[];
+    reasoning?: string;
+    error?: string;
+  } | null>(null);
 
-  const { setLastSearchResults, setSelectedJob } = useJobStore();
+  const { setLastSearchResults } = useJobStore();
 
-  // Fetch jobs list
-  const { data: searchResponse, isLoading: searchLoading, refetch: executeSearch, isRefetching } = useQuery({
-    queryKey: ['job-search', query],
-    queryFn: () => jobsService.searchJobs(query),
-    enabled: false, // only execute on click
-  });
-
-  // Store results in Zustand store for AI Assistant session reference
-  useEffect(() => {
-    if (searchResponse?.jobs) {
-      setLastSearchResults(searchResponse.jobs);
-    }
-  }, [searchResponse, setLastSearchResults]);
-
-  // Manual fit calculation mutation
-  const manualFitMutation = useMutation({
-    mutationFn: jobsService.calculateManualFit,
-    onSuccess: (data) => {
-      setManualFitResult(data);
-    },
-  });
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query) return;
     setExpandedJobIndex(null);
-    executeSearch();
+    setSearchLoading(true);
+    setSearchMessage('');
+    
+    try {
+      const response = await jobsService.searchJobs(query);
+      setJobsList(response.jobs || []);
+      setLastSearchResults(response.jobs || []);
+    } catch (err) {
+      console.error('Error searching jobs', err);
+      setSearchMessage('Failed to fetch job postings. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
-  const handleManualFitSubmit = (e: React.FormEvent) => {
+  const handleManualFitSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualDescription) return;
+    if (!manualDescription || !manualTitle) return;
     setManualFitResult(null);
-    manualFitMutation.mutate(manualDescription);
+    setManualFitLoading(true);
+
+    try {
+      const data = await jobsService.calculateFit(manualTitle, manualCompany, manualDescription);
+      setManualFitResult(data);
+    } catch (err) {
+      console.error('Error calculating fit', err);
+    } finally {
+      setManualFitLoading(false);
+    }
   };
 
   const handleToggleExpand = (index: number) => {
@@ -77,24 +90,41 @@ export default function JobHunter() {
   };
 
   const handleDraftCoverLetter = (job: JobItem) => {
-    setSelectedJob(job);
+    sessionStorage.setItem(
+      "pending_assistant_message",
+      JSON.stringify({
+        message: `Draft a cover letter for the ${job.role || job.title} role at ${job.company}.`,
+        job_title: job.role || job.title,
+        job_description: job.description,
+      })
+    );
     router.push('/assistant');
   };
 
-  const getScoreColor = (percent: number) => {
-    if (percent >= 80) return 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-950';
-    if (percent >= 55) return 'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-950';
+  // Send job context to assistant with a readiness-check message
+  const handleAskAssistant = (job: JobItem) => {
+    sessionStorage.setItem(
+      "pending_assistant_message",
+      JSON.stringify({
+        message: `Am I a good fit for the ${job.role || job.title} role at ${job.company}? Assess my readiness based on my CV.`,
+        job_title: job.role || job.title,
+        job_description: job.description,
+      })
+    );
+    router.push('/assistant');
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-950';
+    if (score >= 55) return 'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-950';
     return 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-950';
   };
 
-  const getScoreBgBar = (percent: number) => {
-    if (percent >= 80) return 'bg-emerald-500';
-    if (percent >= 55) return 'bg-amber-500';
+  const getScoreBgBar = (score: number) => {
+    if (score >= 80) return 'bg-emerald-500';
+    if (score >= 55) return 'bg-amber-500';
     return 'bg-rose-500';
   };
-
-  const jobsList = searchResponse?.jobs || [];
-  const searchMessage = searchResponse?.message || '';
 
   return (
     <div className="space-y-8">
@@ -106,7 +136,7 @@ export default function JobHunter() {
             Intelligent Job Hunting
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5 font-medium">
-            Search live job postings or evaluate custom listings using AI parameters.
+            Search for jobs or check your fit for a specific role.
           </p>
         </div>
       </div>
@@ -115,25 +145,25 @@ export default function JobHunter() {
       <div className="flex border-b border-slate-200 dark:border-slate-800/80 gap-6">
         <button
           onClick={() => setActiveTab('board')}
-          className={`pb-3 font-semibold text-sm transition-all relative ${
+          className={`pb-3 font-semibold text-sm transition-all relative cursor-pointer ${
             activeTab === 'board'
               ? 'text-sky-500 dark:text-sky-400'
               : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
           }`}
         >
-          🔍 Live Search & AI Match
+          🔍 Search Jobs
           {activeTab === 'board' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500 dark:bg-sky-400" />}
         </button>
 
         <button
           onClick={() => setActiveTab('evaluator')}
-          className={`pb-3 font-semibold text-sm transition-all relative ${
+          className={`pb-3 font-semibold text-sm transition-all relative cursor-pointer ${
             activeTab === 'evaluator'
               ? 'text-indigo-500 dark:text-indigo-400'
               : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
           }`}
         >
-          🧠 Custom Fit Scorer
+          🧠 Check Job Fit
           {activeTab === 'evaluator' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 dark:bg-indigo-400" />}
         </button>
       </div>
@@ -145,9 +175,9 @@ export default function JobHunter() {
           {/* Query Search Card */}
           <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <form onSubmit={handleSearchSubmit} className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Natural Language Job Query *
+                  What kind of job are you looking for? *
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
@@ -158,7 +188,7 @@ export default function JobHunter() {
                     required
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g. Find me ML internships in Dhaka open this month, remote frontend engineers paying above 80k"
+                    placeholder="e.g. Machine Learning internships in Dhaka"
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
@@ -168,12 +198,12 @@ export default function JobHunter() {
               <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
                 <button
                   type="submit"
-                  disabled={searchLoading || isRefetching || !query}
-                  className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2"
+                  disabled={searchLoading || !query}
+                  className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
                 >
-                  {searchLoading || isRefetching ? (
+                  {searchLoading ? (
                     <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Extracting Query & AI Scoring...
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Searching job boards...
                     </>
                   ) : (
                     <>
@@ -186,7 +216,7 @@ export default function JobHunter() {
           </div>
 
           {/* Search Results Board */}
-          {(searchLoading || isRefetching) && (
+          {searchLoading && (
             <div className="space-y-4 animate-pulse">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
@@ -196,19 +226,16 @@ export default function JobHunter() {
 
           {/* Search Message Warning */}
           {searchMessage && (
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold">
               💡 {searchMessage}
             </div>
           )}
 
           {/* Job Items List */}
-          {!searchLoading && !isRefetching && jobsList.length > 0 && (
-            <div className="space-y-4 animate-fade-in">
+          {!searchLoading && jobsList.length > 0 && (
+            <div className="space-y-4">
               {jobsList.map((job, index) => {
                 const isExpanded = expandedJobIndex === index;
-                const fitPercent = job.fit_percentage || job.fitScore || 50;
-                const badgeColor = getScoreColor(fitPercent);
-                const barColor = getScoreBgBar(fitPercent);
                 
                 return (
                   <div
@@ -217,14 +244,14 @@ export default function JobHunter() {
                   >
                     
                     {/* Glowing highlight sidebar */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor}`} />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-sky-500" />
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       
                       {/* Job details */}
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-base text-slate-800 dark:text-slate-100 truncate">
-                          {job.role || job.job_title || 'Unknown Position'}
+                          {job.title || job.role || 'Unknown Position'}
                         </h3>
                         
                         <div className="flex flex-wrap items-center gap-3.5 mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-bold">
@@ -234,41 +261,44 @@ export default function JobHunter() {
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-slate-400" /> {job.location}
                           </span>
-                          <span className="flex items-center gap-1">
-                            💵 {job.salary_range || job.salaryRange || 'N/A'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            📅 Deadline: {job.deadline || 'N/A'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            💼 Type: {job.job_type || job.jobType || 'N/A'}
-                          </span>
+                          {job.salary && (
+                            <span className="flex items-center gap-1">
+                              💵 {job.salary}
+                            </span>
+                          )}
+                          {job.date_posted && (
+                            <span className="flex items-center gap-1">
+                              📅 Posted: {job.date_posted}
+                            </span>
+                          )}
+                          {job.source && (
+                            <span className="flex items-center gap-1">
+                              🌐 Source: {job.source}
+                            </span>
+                          )}
                         </div>
-
-                        {job.fit_reason && (
-                          <p className="text-[11px] text-indigo-500 dark:text-indigo-400 mt-2 font-bold flex items-center gap-1">
-                            🎯 {job.fit_reason}
-                          </p>
-                        )}
                       </div>
 
-                      {/* AI fit badge and Actions */}
+                      {/* Actions */}
                       <div className="flex items-center gap-2.5 shrink-0">
+                        {/* Ask Assistant button */}
+                        <button
+                          onClick={() => handleAskAssistant(job)}
+                          className="py-1.5 px-3.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70 transition-all flex items-center gap-1 active:scale-95 shadow-sm cursor-pointer"
+                        >
+                          <Bot className="h-3.5 w-3.5 text-indigo-500" /> Ask Assistant
+                        </button>
+
                         <button
                           onClick={() => handleDraftCoverLetter(job)}
-                          className="py-1.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 text-[10px] font-bold text-slate-600 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-850 transition-all flex items-center gap-1 active:scale-95 shadow-sm"
+                          className="py-1.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 text-[10px] font-bold text-slate-650 dark:bg-slate-900 dark:text-slate-450 dark:hover:bg-slate-850 transition-all flex items-center gap-1 active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Mail className="h-3.5 w-3.5 text-sky-500" /> Draft Cover Letter
                         </button>
 
-                        <div className={`py-1.5 px-3 rounded-xl border text-xs font-extrabold flex items-center gap-1 ${badgeColor}`}>
-                          <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                          <span>AI Fit: {fitPercent}%</span>
-                        </div>
-
                         <button
                           onClick={() => handleToggleExpand(index)}
-                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-700 dark:border-slate-850 dark:hover:bg-slate-900 transition-colors"
+                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-700 dark:border-slate-850 dark:hover:bg-slate-900 transition-colors cursor-pointer"
                         >
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>
@@ -276,53 +306,28 @@ export default function JobHunter() {
 
                     </div>
 
-                    {/* Expandable description and AI Match summary details */}
+                    {/* Expandable description */}
                     {isExpanded && (
-                      <div className="mt-5 border-t border-slate-100 dark:border-slate-800/60 pt-4 space-y-4 animate-fade-in text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        
-                        {/* Match Bar Visualizer */}
+                      <div className="mt-5 border-t border-slate-100 dark:border-slate-800/60 pt-4 space-y-4 text-xs font-semibold text-slate-650 dark:text-slate-350">
                         <div>
-                          <div className="flex justify-between mb-1">
-                            <span className="uppercase text-[10px] tracking-wider text-slate-400">Match score meter</span>
-                            <span className="text-slate-800 dark:text-slate-200">{fitPercent}%</span>
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                            <div className={`h-full ${barColor}`} style={{ width: `${fitPercent}%` }} />
-                          </div>
-                        </div>
-
-                        {/* AI Match Summary with matches vs gaps formatted as whitespace block */}
-                        {job.summary && (
-                          <div className="p-4 bg-slate-50 rounded-xl border border-slate-150 dark:bg-slate-900/60 dark:border-slate-800 flex items-start gap-2.5">
-                            <Cpu className="h-4.5 w-4.5 text-indigo-500 shrink-0 mt-0.5 animate-pulse" />
-                            <div className="w-full">
-                              <h4 className="font-bold text-slate-850 dark:text-slate-200 mb-1">AI Alignment Analysis</h4>
-                              <p className="text-[11px] leading-relaxed text-slate-650 dark:text-slate-400 whitespace-pre-line font-medium">{job.summary}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Description */}
-                        <div>
-                          <h4 className="font-bold text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-wider mb-2">Job Description Snapshot</h4>
-                          <p className="leading-relaxed whitespace-pre-line line-clamp-6 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/30 p-3.5 border border-slate-100 dark:border-slate-800/40 rounded-xl font-medium">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-wider mb-2">Job Description</h4>
+                          <p className="leading-relaxed whitespace-pre-line text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/30 p-3.5 border border-slate-100 dark:border-slate-800/40 rounded-xl font-medium">
                             {job.description}
                           </p>
                         </div>
 
-                        {/* Link to apply */}
-                        <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800/40">
-                          <span className="text-[10px] text-slate-400">Source: {job.source || 'Scraped Posting'}</span>
-                          <a
-                            href={job.job_url || job.applyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-2 px-4 rounded-xl bg-slate-850 hover:bg-slate-750 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors border border-slate-700"
-                          >
-                            Apply Posting <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        </div>
-
+                        {job.url && (
+                          <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
+                            <a
+                              href={job.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-2 px-4 rounded-xl bg-slate-850 hover:bg-slate-750 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
+                            >
+                              Apply on Site <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -332,12 +337,12 @@ export default function JobHunter() {
             </div>
           )}
 
-          {!searchLoading && !isRefetching && jobsList.length === 0 && (
+          {!searchLoading && jobsList.length === 0 && (
             <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-              <Search className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
-              <h4 className="font-bold text-sm text-slate-600 dark:text-slate-400">No Job Searches Queried Yet</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-normal font-semibold">
-                Use the natural language box above to write queries. The AI parser will automatically extract role, location, and type filters!
+              <Search className="h-10 w-10 text-slate-350 dark:text-slate-700 mx-auto mb-3" />
+              <h4 className="font-bold text-sm text-slate-650 dark:text-slate-455">Ready to Search</h4>
+              <p className="text-xs text-slate-450 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-normal font-semibold">
+                Use the search box above to find jobs across LinkedIn, Indeed, and Glassdoor.
               </p>
             </div>
           )}
@@ -350,39 +355,67 @@ export default function JobHunter() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* PASTE JOB BOX */}
-          <div className="lg:col-span-2 p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80">
+          <div className="lg:col-span-2 p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <h3 className="font-semibold text-base text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
               <FlameKindling className="h-5 w-5 text-indigo-500" /> Paste Job Specifications
             </h3>
 
             <form onSubmit={handleManualFitSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-1.5">
+                    Job Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    placeholder="e.g. Lead React Developer"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-1.5">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={manualCompany}
+                    onChange={(e) => setManualCompany(e.target.value)}
+                    placeholder="e.g. Google"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-455 uppercase tracking-wider mb-1.5">
                   Job Description Text *
                 </label>
                 <textarea
                   required
                   value={manualDescription}
                   onChange={(e) => setManualDescription(e.target.value)}
-                  rows={10}
-                  placeholder="Paste the full job posting requirements here. Mention languages, libraries, databases, or cloud frameworks..."
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-800 dark:text-slate-100"
+                  rows={8}
+                  placeholder="Paste the full job posting requirements here..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-800 dark:text-slate-100 font-medium"
                 />
               </div>
 
               <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
                 <button
                   type="submit"
-                  disabled={manualFitMutation.isPending || !manualDescription}
-                  className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2"
+                  disabled={manualFitLoading || !manualDescription || !manualTitle}
+                  className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
                 >
-                  {manualFitMutation.isPending ? (
+                  {manualFitLoading ? (
                     <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Evaluating Vectors...
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Analyzing Fit...
                     </>
                   ) : (
                     <>
-                      <SlidersHorizontal className="h-3.5 w-3.5" /> Analyze Match Suitability
+                      <SlidersHorizontal className="h-3.5 w-3.5" /> Check My Fit
                     </>
                   )}
                 </button>
@@ -390,23 +423,30 @@ export default function JobHunter() {
             </form>
           </div>
 
-          {/* RESULTS GRAPHICAL CIRCLE */}
+          {/* RESULTS PANEL */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 h-full flex flex-col justify-between">
+            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 h-full flex flex-col justify-between shadow-sm">
               
               <div>
                 <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-6 pb-2 border-b border-slate-100 dark:border-slate-800/40">
-                  AI Fit Score Report
+                  Fit Score Results
                 </h3>
 
-                {manualFitMutation.isPending && (
+                {manualFitLoading && (
                   <div className="py-12 text-center animate-pulse space-y-4">
                     <div className="h-24 w-24 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto" />
                     <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded mx-auto" />
                   </div>
                 )}
 
-                {!manualFitMutation.isPending && manualFitResult && (
+                {!manualFitLoading && manualFitResult && manualFitResult.error && (
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 dark:bg-rose-950/10 dark:border-rose-900/40 text-xs text-rose-650 dark:text-rose-400 font-semibold leading-relaxed">
+                    <p className="font-bold text-rose-800 dark:text-rose-400 mb-2">Evaluation Failed</p>
+                    <p>{manualFitResult.error}</p>
+                  </div>
+                )}
+
+                {!manualFitLoading && manualFitResult && !manualFitResult.error && (
                   <div className="space-y-6">
                     
                     {/* Ring scoring indicator */}
@@ -419,38 +459,63 @@ export default function JobHunter() {
                             cx="56"
                             cy="56"
                             r="48"
-                            stroke={manualFitResult.score >= 0.8 ? '#10b981' : manualFitResult.score >= 0.55 ? '#f59e0b' : '#f43f5e'}
+                            stroke={(manualFitResult.score ?? 0) >= 80 ? '#10b981' : (manualFitResult.score ?? 0) >= 55 ? '#f59e0b' : '#f43f5e'}
                             strokeWidth="8"
                             fill="transparent"
                             strokeDasharray={301.6}
-                            strokeDashoffset={301.6 - (301.6 * (manualFitResult.score > 1 ? manualFitResult.score / 100 : manualFitResult.score))}
+                            strokeDashoffset={301.6 - (301.6 * ((manualFitResult.score ?? 0) / 100))}
                             className="transition-all duration-1000"
                           />
                         </svg>
                         <span className="absolute text-2xl font-extrabold text-slate-800 dark:text-white">
-                          {Math.round((manualFitResult.score > 1 ? manualFitResult.score / 100 : manualFitResult.score) * 100)}%
+                          {manualFitResult.score}%
                         </span>
                       </div>
                       
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-3 uppercase tracking-wider">
-                        Resume Suitability Score
+                        Fit Score
                       </span>
+                    </div>
+
+                    {/* Matched / Missing list */}
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Matched Skills</span>
+                        <div className="flex flex-wrap gap-1">
+                          {(manualFitResult.matched_skills ?? []).map((s, idx) => (
+                            <span key={idx} className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                              ✓ {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Missing Skills</span>
+                        <div className="flex flex-wrap gap-1">
+                          {(manualFitResult.missing_skills ?? []).map((s, idx) => (
+                            <span key={idx} className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                              ✗ {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Summary explanations */}
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
                       <div className="flex items-center gap-1 text-slate-800 dark:text-slate-200 font-bold mb-2">
-                        <BookOpen className="h-4 w-4 text-indigo-400" /> AI Score Breakdown
+                        <BookOpen className="h-4 w-4 text-indigo-400" /> Analysis
                       </div>
-                      <p className="whitespace-pre-line">{manualFitResult.summary}</p>
+                      <p className="whitespace-pre-line">{manualFitResult.reasoning}</p>
                     </div>
 
                   </div>
                 )}
 
-                {!manualFitMutation.isPending && !manualFitResult && (
-                  <div className="text-center py-16 text-slate-400 dark:text-slate-600 text-xs italic font-semibold">
-                    Paste description specs and compute analysis to view glowing scoring cards here.
+                {!manualFitLoading && !manualFitResult && (
+                  <div className="text-center py-16 text-slate-400 dark:text-slate-650 text-xs italic font-semibold">
+                    Paste a job description above to see your fit score.
                   </div>
                 )}
               </div>

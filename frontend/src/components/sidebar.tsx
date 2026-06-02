@@ -13,7 +13,6 @@ import {
   FileText,
   Briefcase,
   MessageSquareCode,
-  Sparkles,
   UserCog,
   LogOut,
   ChevronLeft,
@@ -34,7 +33,6 @@ export default function Sidebar() {
     { name: 'CV & Resume', href: '/cv', icon: FileText },
     { name: 'Job Search & Fit', href: '/jobs', icon: Briefcase },
     { name: 'AI Assistant', href: '/assistant', icon: MessageSquareCode },
-    { name: 'Cover Letter', href: '/cover-letter', icon: Sparkles },
     { name: 'Profile Settings', href: '/profile', icon: UserCog },
   ];
 
@@ -50,7 +48,6 @@ export default function Sidebar() {
         sidebarOpen ? "w-64" : "w-20"
       )}
     >
-      {/* Brand Header */}
       <div className="flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20">
@@ -73,7 +70,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Profile info in sidebar when open */}
       {sidebarOpen && user && (
         <div className="p-4 mx-3 my-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200/60 dark:from-[#131d35] dark:to-[#172545]/40 dark:border-slate-800/80">
           <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold tracking-wider uppercase mb-1">Authenticated</p>
@@ -82,7 +78,6 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Navigation List */}
       <nav className="flex-1 space-y-1.5 px-3 py-3 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
@@ -109,7 +104,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer / Toggle & Logout */}
       <div className="p-3 border-t border-slate-200 space-y-1.5 dark:border-slate-800">
         {!sidebarOpen && (
           <button

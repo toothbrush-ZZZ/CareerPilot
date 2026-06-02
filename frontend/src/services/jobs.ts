@@ -1,25 +1,44 @@
 import { api } from './api';
-import { JobSearchResponse } from '@/types';
+
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string | null;
+  url: string;
+  description: string;
+  date_posted?: string;
+  source?: string;
+}
+
+interface JobSearchResponse {
+  jobs: Job[];
+  count: number;
+}
 
 interface FitResponse {
-  score: number;
-  summary: string;
+  score?: number;
+  matched_skills?: string[];
+  missing_skills?: string[];
+  reasoning?: string;
+  error?: string;
 }
 
 export const jobsService = {
-  searchJobs: async (query: string, location?: string, maxResults = 15): Promise<JobSearchResponse> => {
-    const params: Record<string, string | number> = { query, max_results: maxResults };
-    if (location) {
-      params.location = location;
-    }
-    return api.get<JobSearchResponse>('/api/v1/jobs/search', params);
+  searchJobs: async (query: string, location?: string, limit = 10): Promise<JobSearchResponse> => {
+    return api.post<JobSearchResponse>('/api/v1/jobs/search', {
+      query,
+      location: location || 'Dhaka',
+      limit
+    });
   },
 
-  getJobsLocation: async (): Promise<{ location: string }> => {
-    return api.get<{ location: string }>('/api/v1/jobs/location');
-  },
-
-  calculateManualFit: async (jobDescription: string): Promise<FitResponse> => {
-    return api.post<FitResponse>('/api/v1/jobs/manual-fit', { job_description: jobDescription });
+  calculateFit: async (jobTitle: string, company: string, jobDescription: string): Promise<FitResponse> => {
+    return api.post<FitResponse>('/api/v1/jobs/compute-fit', {
+      job_title: jobTitle,
+      company,
+      job_description: jobDescription
+    });
   },
 };

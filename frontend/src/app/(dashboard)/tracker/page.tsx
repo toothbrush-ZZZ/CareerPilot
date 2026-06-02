@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
 import { trackerService } from '@/services/tracker';
 import { Application } from '@/types';
 import {
@@ -10,12 +9,9 @@ import {
   MapPin,
   Link2,
   Trash2,
-  Edit,
   ClipboardList,
-  Compass,
-  ArrowRightLeft,
   X,
-  FileText
+  RefreshCw
 } from 'lucide-react';
 
 const COLUMNS: { id: Application['status']; name: string; colorClass: string; bgClass: string; textClass: string }[] = [
@@ -26,9 +22,8 @@ const COLUMNS: { id: Application['status']; name: string; colorClass: string; bg
 ];
 
 export default function KanbanTracker() {
-  const queryClient = useQueryClient();
-  
-  // Track open/close dialog modals
+  const [apps, setApps] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
@@ -39,43 +34,24 @@ export default function KanbanTracker() {
   const [jobUrl, setJobUrl] = useState('');
   const [status, setStatus] = useState<Application['status']>('applied');
   const [notes, setNotes] = useState('');
+  const [isPending, setIsPending] = useState(false);
 
-  // Fetch applications list
-  const { data: apps = [], isLoading, refetch } = useQuery({
-    queryKey: ['applications'],
-    queryFn: trackerService.getApplications,
-  });
+  const fetchApps = async () => {
+    setIsLoading(true);
+    try {
+      const data = await trackerService.getApplications();
+      setApps(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Mutations
-  const createMutation = useMutation({
-    mutationFn: trackerService.createApplication,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      closeFormModal();
-    },
-  });
+  useEffect(() => {
+    fetchApps();
+  }, []);
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Application> }) =>
-      trackerService.updateApplication(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      closeFormModal();
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: trackerService.deleteApplication,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      closeFormModal();
-    },
-  });
-
-  // Open modal for adding new application
   const handleAddNewClick = () => {
     setSelectedApp(null);
     setJobTitle('');
@@ -87,15 +63,14 @@ export default function KanbanTracker() {
     setModalOpen(true);
   };
 
-  // Open modal for editing existing application
   const handleCardClick = (app: Application) => {
     setSelectedApp(app);
     setJobTitle(app.job_title);
     setCompany(app.company);
     setLocation(app.location);
-    setJobUrl(app.job_url);
+    setJobUrl(app.job_url || '');
     setStatus(app.status);
-    setNotes(app.notes);
+    setNotes(app.notes || '');
     setModalOpen(true);
   };
 
@@ -104,9 +79,10 @@ export default function KanbanTracker() {
     setSelectedApp(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobTitle || !company) return;
+    setIsPending(true);
 
     const payload = {
       job_title: jobTitle,
@@ -117,24 +93,45 @@ export default function KanbanTracker() {
       notes: notes || '',
     };
 
-    if (selectedApp) {
-      updateMutation.mutate({ id: selectedApp.id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
-  };
-
-  const handleDelete = () => {
-    if (selectedApp) {
-      if (confirm('Delete this tracked job application?')) {
-        deleteMutation.mutate(selectedApp.id);
+    try {
+      if (selectedApp) {
+        await trackerService.updateApplication(selectedApp.id, payload);
+      } else {
+        await trackerService.createApplication(payload);
       }
+      closeFormModal();
+      await fetchApps();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPending(false);
     }
   };
 
-  // Quick move status inside cards
-  const handleStatusShift = (app: Application, targetStatus: Application['status']) => {
-    updateMutation.mutate({ id: app.id, data: { status: targetStatus } });
+  const handleDelete = async () => {
+    if (!selectedApp) return;
+    if (!confirm('Delete this tracked job application?')) return;
+    setIsPending(true);
+
+    try {
+      await trackerService.deleteApplication(selectedApp.id);
+      closeFormModal();
+      await fetchApps();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleStatusShift = async (app: Application, targetStatus: Application['status']) => {
+    try {
+      await trackerService.updateApplication(app.id, { status: targetStatus });
+      // Optimistic update locally
+      setApps(prev => prev.map(a => a.id === app.id ? { ...a, status: targetStatus } : a));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (isLoading) {
@@ -157,16 +154,16 @@ export default function KanbanTracker() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display font-bold text-2xl md:text-3xl text-slate-800 dark:text-slate-100">
-            Application Pipeline
+            Applications
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5 font-medium">
-            Drag-like updates and quick logs of active career targets.
+            Track and manage your job applications.
           </p>
         </div>
 
         <button
           onClick={handleAddNewClick}
-          className="self-start sm:self-auto flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/20 active:scale-[0.98] transition-all"
+          className="self-start sm:self-auto flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/20 active:scale-[0.98] transition-all cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Add Application
         </button>
@@ -187,7 +184,7 @@ export default function KanbanTracker() {
                 <span className={`text-xs font-bold uppercase tracking-wider ${col.textClass}`}>
                   {col.name}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/60 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/65 text-slate-605 dark:bg-slate-800 dark:text-slate-400">
                   {colApps.length}
                 </span>
               </div>
@@ -206,7 +203,7 @@ export default function KanbanTracker() {
                       </h4>
                     </div>
                     
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate flex items-center gap-1.5 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-405 font-semibold truncate flex items-center gap-1.5 mt-1">
                       <Briefcase className="h-3 w-3 shrink-0 text-slate-400" /> {app.company}
                     </p>
 
@@ -215,7 +212,7 @@ export default function KanbanTracker() {
                     </p>
 
                     {app.notes && (
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium line-clamp-2 mt-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-850">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-550 font-medium line-clamp-2 mt-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-850">
                         {app.notes}
                       </p>
                     )}
@@ -228,7 +225,7 @@ export default function KanbanTracker() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-[10px] text-sky-500 hover:underline inline-flex items-center gap-1 font-semibold"
+                          className="text-[10px] text-sky-500 hover:underline inline-flex items-center gap-1 font-semibold cursor-pointer"
                         >
                           <Link2 className="h-3 w-3" /> Job Link
                         </a>
@@ -236,14 +233,14 @@ export default function KanbanTracker() {
                         <span className="text-[10px] text-slate-400 italic">No Link</span>
                       )}
 
-                      {/* Dropdown status transfer shortcut */}
+                      {/* Dropdown shortcut */}
                       <select
                         value={app.status}
                         onChange={(e) => {
                           e.stopPropagation();
                           handleStatusShift(app, e.target.value as Application['status']);
                         }}
-                        className="text-[9px] font-bold py-0.5 px-1.5 rounded bg-slate-100 dark:bg-slate-800 border-none outline-none text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750"
+                        className="text-[9px] font-bold py-0.5 px-1.5 rounded bg-slate-100 dark:bg-slate-800 border-none outline-none text-slate-655 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="applied">Applied</option>
@@ -268,9 +265,9 @@ export default function KanbanTracker() {
         })}
       </div>
 
-      {/* Dynamic Overlay Form Modal (Dual Mode Add/Edit) */}
+      {/* Dynamic Overlay Form Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-lg bg-white border border-slate-200 dark:bg-[#0b0f19] dark:border-slate-800 rounded-3xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
             
             {/* Modal Title Header */}
@@ -283,7 +280,7 @@ export default function KanbanTracker() {
               </div>
               <button
                 onClick={closeFormModal}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -302,7 +299,7 @@ export default function KanbanTracker() {
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
                     placeholder="Senior AI Engineer"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
 
@@ -316,7 +313,7 @@ export default function KanbanTracker() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder="Acme Corp"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
               </div>
@@ -331,7 +328,7 @@ export default function KanbanTracker() {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="San Francisco, CA or Remote"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
 
@@ -344,7 +341,7 @@ export default function KanbanTracker() {
                     value={jobUrl}
                     onChange={(e) => setJobUrl(e.target.value)}
                     placeholder="https://company.com/job/123"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
               </div>
@@ -356,7 +353,7 @@ export default function KanbanTracker() {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as Application['status'])}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                 >
                   <option value="applied">Applied</option>
                   <option value="interviewing">Interviewing</option>
@@ -367,14 +364,14 @@ export default function KanbanTracker() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Private Logs & Interview Notes
+                  Notes
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  placeholder="Recruiter call scheduled. Notes about benefits, questions to ask..."
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                  placeholder="Recruiter call scheduled. Notes about benefits..."
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-medium"
                 />
               </div>
 
@@ -384,9 +381,10 @@ export default function KanbanTracker() {
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="flex items-center gap-1.5 px-4 py-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-bold transition-all border border-rose-500/10"
+                    disabled={isPending}
+                    className="flex items-center gap-1.5 px-4 py-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl text-xs font-bold transition-all border border-rose-500/10 cursor-pointer"
                   >
-                    <Trash2 className="h-4 w-4" /> Delete Tracker
+                    <Trash2 className="h-4 w-4" /> Delete Application
                   </button>
                 ) : (
                   <div />
@@ -396,15 +394,17 @@ export default function KanbanTracker() {
                   <button
                     type="button"
                     onClick={closeFormModal}
-                    className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-xs font-bold rounded-xl text-slate-600 dark:text-slate-400 transition-colors"
+                    className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-xs font-bold rounded-xl text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-sm text-xs font-bold rounded-xl transition-all"
+                    disabled={isPending}
+                    className="px-5 py-2 text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-sm text-xs font-bold rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
                   >
-                    {selectedApp ? 'Save Changes' : 'Create Entry'}
+                    {isPending && <RefreshCw className="h-3 w-3 animate-spin" />}
+                    {selectedApp ? 'Save Changes' : 'Add Application'}
                   </button>
                 </div>
               </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -9,22 +8,21 @@ import {
   Save,
   MapPin,
   User,
-  ShieldAlert,
   ShieldCheck,
   RefreshCw,
-  Sparkles
 } from 'lucide-react';
 
 export default function ProfileSettings() {
-  const queryClient = useQueryClient();
   const { user, updateProfile } = useAuthStore();
   
   // Local form states
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  const [desiredRole, setDesiredRole] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isPending, setIsPending] = useState(false);
 
   // Synchronize initial data once loaded
   useEffect(() => {
@@ -32,41 +30,40 @@ export default function ProfileSettings() {
       setFullName(user.full_name || '');
       setCity(user.location_city || '');
       setCountry(user.location_country || '');
+      setDesiredRole(user.desired_role || '');
     }
   }, [user]);
 
-  // Mutations
-  const updateMutation = useMutation({
-    mutationFn: authService.updateProfile,
-    onSuccess: (data) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName) return;
+
+    setIsPending(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+
+    try {
+      await authService.updateProfile({
+        full_name: fullName,
+        location_city: city || '',
+        location_country: country || '',
+        desired_role: desiredRole || '',
+      });
+
       updateProfile({
         full_name: fullName,
         location_city: city,
         location_country: country,
+        desired_role: desiredRole,
       });
       
-      queryClient.invalidateQueries({ queryKey: ['cv-status'] });
-      queryClient.invalidateQueries({ queryKey: ['user-location'] });
-      
       setSuccessMsg('Profile updated successfully!');
-      setErrorMsg('');
       setTimeout(() => setSuccessMsg(''), 4000);
-    },
-    onError: (err: any) => {
+    } catch (err: any) {
       setErrorMsg(err.message || 'Failed to update profile settings.');
-      setSuccessMsg('');
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fullName) return;
-
-    updateMutation.mutate({
-      full_name: fullName,
-      location_city: city || '',
-      location_country: country || '',
-    });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -84,7 +81,7 @@ export default function ProfileSettings() {
 
       {/* Alert banners */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-405 text-xs font-semibold">
           🎉 {successMsg}
         </div>
       )}
@@ -110,7 +107,7 @@ export default function ProfileSettings() {
           {/* Readonly Account Tier Indicator */}
           <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-850 rounded-xl flex items-center justify-between font-bold text-xs">
             <span className="text-slate-500 dark:text-slate-400">Account Subscription Tier:</span>
-            <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1 text-sky-650 dark:text-sky-400 uppercase tracking-wide">
               <ShieldCheck className="h-4 w-4" /> AI Premium Member
             </span>
           </div>
@@ -129,7 +126,25 @@ export default function ProfileSettings() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Devin Pilot"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              Desired Role / Job Title
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                👔
+              </span>
+              <input
+                type="text"
+                value={desiredRole}
+                onChange={(e) => setDesiredRole(e.target.value)}
+                placeholder="e.g. Software Engineer, Frontend Developer"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
               />
             </div>
           </div>
@@ -147,8 +162,8 @@ export default function ProfileSettings() {
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="e.g. San Francisco"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                  placeholder="e.g. Dhaka"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                 />
               </div>
             </div>
@@ -165,8 +180,8 @@ export default function ProfileSettings() {
                   type="text"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  placeholder="e.g. USA"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
+                  placeholder="e.g. Bangladesh"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 pl-10 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                 />
               </div>
             </div>
@@ -176,10 +191,10 @@ export default function ProfileSettings() {
           <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
             <button
               type="submit"
-              disabled={updateMutation.isPending || !fullName}
-              className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2"
+              disabled={isPending || !fullName}
+              className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
             >
-              {updateMutation.isPending ? (
+              {isPending ? (
                 <>
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving Changes...
                 </>

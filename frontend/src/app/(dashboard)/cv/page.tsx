@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useRef } from 'react';
 import { cvService } from '@/services/cv';
 import {
   FileText,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 
 export default function CVManager() {
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Local state controls
@@ -32,48 +30,76 @@ export default function CVManager() {
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState('');
+  const [cvStatus, setCvStatus] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, setIsPending] = useState(false);
 
-  // Query CV status
-  const { data: cvStatus, isLoading, refetch } = useQuery({
-    queryKey: ['cv-status'],
-    queryFn: cvService.getCVStatus,
-  });
+  const fetchCVStatus = async () => {
+    setIsLoading(true);
+    try {
+      const status = await cvService.getCVStatus();
+      setCvStatus(status);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Mutations
-  const uploadMutation = useMutation({
-    mutationFn: cvService.uploadCV,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['cv-status'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+  useEffect(() => {
+    fetchCVStatus();
+  }, []);
+
+  const handleUploadSubmit = async () => {
+    if (!selectedFile) return;
+    setIsPending(true);
+    setUploadError('');
+    try {
+      await cvService.uploadCV(selectedFile);
       setSelectedFile(null);
-      setUploadError('');
-    },
-    onError: (err: any) => {
-      setUploadError(err.message || 'File upload failed. Ensure PDF is under 5MB.');
-    },
-  });
+      await fetchCVStatus();
+    } catch (err: any) {
+      setUploadError(err.message || 'Upload failed. Please ensure the file is under 5MB.');
+    } finally {
+      setIsPending(false);
+    }
+  };
 
-  const buildMutation = useMutation({
-    mutationFn: cvService.buildCV,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cv-status'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cvName || !cvSummary || skills.length === 0) return;
+    setIsPending(true);
+    setUploadError('');
+    try {
+      await cvService.buildCV({
+        name: cvName,
+        summary: cvSummary,
+        skills,
+      });
       setManualFormOpen(false);
       setCvName('');
       setCvSummary('');
       setSkills([]);
-      setUploadError('');
-    },
-  });
+      await fetchCVStatus();
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to save resume profile.');
+    } finally {
+      setIsPending(false);
+    }
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: cvService.deleteCV,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cv-status'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      setUploadError('');
-    },
-  });
+  const handleDeleteCV = async () => {
+    if (!confirm('Are you sure you want to delete your resume?')) return;
+    setIsPending(true);
+    try {
+      await cvService.deleteCV();
+      await fetchCVStatus();
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   // Drag and drop handlers
   const handleDrag = (e: React.DragEvent) => {
@@ -108,20 +134,14 @@ export default function CVManager() {
     setUploadError('');
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
-      setUploadError('Only PDF, DOCX, or TXT formats are supported.');
+      setUploadError('Please select a PDF, DOCX, or TXT file.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File exceeds the 5MB size limit.');
+      setUploadError('Please choose a file smaller than 5MB.');
       return;
     }
     setSelectedFile(file);
-  };
-
-  const handleUploadSubmit = () => {
-    if (selectedFile) {
-      uploadMutation.mutate(selectedFile);
-    }
   };
 
   const handleManualAddSkill = (e: React.FormEvent) => {
@@ -134,23 +154,6 @@ export default function CVManager() {
 
   const handleRemoveSkill = (skill: string) => {
     setSkills(skills.filter((s) => s !== skill));
-  };
-
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cvName || !cvSummary || skills.length === 0) return;
-
-    buildMutation.mutate({
-      name: cvName,
-      summary: cvSummary,
-      skills,
-    });
-  };
-
-  const handleDeleteCV = () => {
-    if (confirm('Are you sure you want to delete your resume chunks? This will clear LLM search context.')) {
-      deleteMutation.mutate();
-    }
   };
 
   if (isLoading) {
@@ -175,14 +178,14 @@ export default function CVManager() {
             Resume & CV Manager
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5 font-medium">
-            AI indexes your resume to calculate fit scores and respond contextually.
+            Upload your resume to enable personalized job matching and AI assistant features.
           </p>
         </div>
       </div>
 
       {/* Error alert */}
       {uploadError && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-405 text-xs font-semibold flex items-center gap-2">
           <FileWarning className="h-4.5 w-4.5 text-rose-400 shrink-0" />
           <span>{uploadError}</span>
         </div>
@@ -193,7 +196,7 @@ export default function CVManager() {
         
         {/* CV STATUS MONITOR PANEL */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80">
+          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-6 pb-2 border-b border-slate-100 dark:border-slate-800/40">
               Indexing Status
             </h3>
@@ -207,14 +210,14 @@ export default function CVManager() {
                   <div>
                     <h4 className="font-bold text-sm text-emerald-800 dark:text-emerald-400">CV Loaded</h4>
                     <p className="text-[11px] text-emerald-600 dark:text-emerald-500 font-semibold mt-0.5">
-                      Successfully indexed in Vector DB
+                      Your resume is ready to use
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <div className="flex justify-between">
-                    <span>Parsed Segments:</span>
+                    <span>Details Extracted:</span>
                     <span className="text-slate-800 dark:text-slate-200">{cvStatus.chunk_count} chunks</span>
                   </div>
                   <div className="flex justify-between">
@@ -225,37 +228,21 @@ export default function CVManager() {
                   </div>
                 </div>
 
-                {cvStatus.sections && cvStatus.sections.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Parsed Sections</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cvStatus.sections.map((sec, i) => (
-                        <span
-                          key={i}
-                          className="py-1 px-2.5 rounded-lg bg-slate-100 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300 font-semibold"
-                        >
-                          {sec}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <button
                   onClick={handleDeleteCV}
-                  disabled={deleteMutation.isPending}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 border border-rose-500/10 dark:hover:bg-rose-500/10 transition-all"
+                  disabled={isPending}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 border border-rose-500/10 dark:hover:bg-rose-500/10 transition-all cursor-pointer"
                 >
-                  <Trash2 className="h-4 w-4" /> Reset / Delete Resume
+                  <Trash2 className="h-4 w-4" /> Delete Resume
                 </button>
 
               </div>
             ) : (
               <div className="text-center py-8">
-                <FileWarning className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+                <FileWarning className="h-10 w-10 text-slate-350 dark:text-slate-700 mx-auto mb-3" />
                 <h4 className="font-bold text-sm text-slate-700 dark:text-slate-400">No Resume Found</h4>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed px-4">
-                  Please upload a PDF file or build a quick online resume to unlock AI features.
+                  Upload a file or create a manual profile below to get started.
                 </p>
               </div>
             )}
@@ -266,7 +253,7 @@ export default function CVManager() {
         <div className="lg:col-span-2 space-y-6">
           
           {/* DRAG AND DROP UPLOADER BOX */}
-          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80">
+          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <h3 className="font-semibold text-base text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
               <UploadCloud className="h-5 w-5 text-sky-500" /> Upload Document
             </h3>
@@ -279,7 +266,7 @@ export default function CVManager() {
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
                 dragActive
-                  ? 'border-sky-500 bg-sky-50/20 dark:border-sky-400 dark:bg-sky-950/10'
+                  ? 'border-sky-500 bg-sky-50/20 dark:border-sky-400 dark:bg-sky-955/10'
                   : 'border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-900/40'
               }`}
             >
@@ -318,16 +305,16 @@ export default function CVManager() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSelectedFile(null)}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-250 transition-colors"
+                    className="text-slate-405 hover:text-slate-600 dark:hover:text-slate-250 transition-colors cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
                   <button
                     onClick={handleUploadSubmit}
-                    disabled={uploadMutation.isPending}
-                    className="py-2 px-4 flex items-center gap-1.5 bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/15 disabled:opacity-50"
+                    disabled={isPending}
+                    className="py-2 px-4 flex items-center gap-1.5 bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/15 disabled:opacity-50 cursor-pointer"
                   >
-                    {uploadMutation.isPending ? (
+                    {isPending ? (
                       <>
                         <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Uploading Chunks...
                       </>
@@ -341,27 +328,27 @@ export default function CVManager() {
           </div>
 
           {/* FALLBACK MANUAL JSON BUILDER FORM */}
-          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80">
+          <div className="p-6 bg-white border border-slate-200/80 rounded-2xl dark:bg-[#0d1527] dark:border-slate-800/80 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <ListRestart className="h-5 w-5 text-indigo-500" /> Profile Fallback Creator
+                <ListRestart className="h-5 w-5 text-indigo-500" /> Manual Profile Builder
               </h3>
               <button
                 type="button"
                 onClick={() => setManualFormOpen(!manualFormOpen)}
-                className="text-xs font-bold text-sky-500 dark:text-sky-400 hover:underline"
+                className="text-xs font-bold text-sky-500 dark:text-sky-400 hover:underline cursor-pointer"
               >
                 {manualFormOpen ? 'Hide Creator' : 'Build Manually'}
               </button>
             </div>
 
             {manualFormOpen && (
-              <form onSubmit={handleManualSubmit} className="space-y-4 animate-fade-in">
+              <form onSubmit={handleManualSubmit} className="space-y-4">
                 
                 <div className="p-3.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 mb-4 flex items-start gap-2.5">
                   <Sparkles className="h-4.5 w-4.5 text-indigo-400 shrink-0 mt-0.5 animate-pulse" />
                   <p className="text-xs text-indigo-400 dark:text-indigo-400 font-semibold leading-relaxed">
-                    No PDF file nearby? Fill in this mock CV structural profile which calculates match algorithms instantly!
+                    Don't have a resume file? Fill out this profile to use all CareerPilot features.
                   </p>
                 </div>
 
@@ -374,8 +361,8 @@ export default function CVManager() {
                     required
                     value={cvName}
                     onChange={(e) => setCvName(e.target.value)}
-                    placeholder="Devin Pilot"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    placeholder="John Doe"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
 
@@ -388,8 +375,8 @@ export default function CVManager() {
                     value={cvSummary}
                     onChange={(e) => setCvSummary(e.target.value)}
                     rows={4}
-                    placeholder="Senior AI Engineer with 5+ years of experience constructing FastAPI backends and LangChain multi-agent systems..."
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                    placeholder="Software Engineer with 5 years of experience building web applications..."
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                   />
                 </div>
 
@@ -405,12 +392,12 @@ export default function CVManager() {
                       value={skillInput}
                       onChange={(e) => setSkillInput(e.target.value)}
                       placeholder="FastAPI, Python, Next.js"
-                      className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100"
+                      className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-sky-500 transition-colors text-slate-800 dark:text-slate-100 font-semibold"
                     />
                     <button
                       type="button"
                       onClick={handleManualAddSkill}
-                      className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold text-slate-750 dark:text-slate-300 cursor-pointer"
                     >
                       <Plus className="h-4.5 w-4.5" />
                     </button>
@@ -421,13 +408,13 @@ export default function CVManager() {
                       {skills.map((skill, index) => (
                         <span
                           key={index}
-                          className="py-1 pl-2.5 pr-1.5 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 font-bold inline-flex items-center gap-1"
+                          className="py-1 pl-2.5 pr-1.5 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-700 dark:bg-slate-805 dark:border-slate-700 dark:text-slate-300 font-bold inline-flex items-center gap-1"
                         >
                           {skill}
                           <button
                             type="button"
                             onClick={() => handleRemoveSkill(skill)}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -440,10 +427,10 @@ export default function CVManager() {
                 <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800/40">
                   <button
                     type="submit"
-                    disabled={buildMutation.isPending || !cvName || !cvSummary || skills.length === 0}
-                    className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50"
+                    disabled={isPending || !cvName || !cvSummary || skills.length === 0}
+                    className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-sky-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    {buildMutation.isPending ? 'Generating CV Profile...' : 'Save Manual Resume'}
+                    {isPending ? 'Saving Profile...' : 'Save Profile'}
                   </button>
                 </div>
 

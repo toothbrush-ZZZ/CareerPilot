@@ -6,8 +6,8 @@ export const trackerService = {
     return api.get<Application[]>('/api/v1/tracker/applications');
   },
 
-  createApplication: async (data: Omit<Application, 'id'>): Promise<{ status: string }> => {
-    return api.post<{ status: string }>('/api/v1/tracker/applications', data);
+  createApplication: async (data: Omit<Application, 'id'>): Promise<{ status: string; id: string }> => {
+    return api.post<{ status: string; id: string }>('/api/v1/tracker/applications', data);
   },
 
   updateApplication: async (

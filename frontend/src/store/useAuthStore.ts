@@ -13,7 +13,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => {
-  // Try loading initial state from localStorage safely in NextJS client side
   const getInitialToken = () => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('cp_token');

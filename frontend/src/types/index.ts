@@ -4,6 +4,7 @@ export interface UserProfile {
   full_name: string;
   location_city: string;
   location_country: string;
+  desired_role?: string;
 }
 
 export interface Application {
@@ -14,7 +15,7 @@ export interface Application {
   job_url: string;
   status: 'applied' | 'interviewing' | 'offer' | 'rejected';
   notes: string;
-  created_at?: string;
+  applied_at?: string;
   updated_at?: string;
 }
 
@@ -36,7 +37,7 @@ export interface DashboardStats {
   };
   goals_total: number;
   goals_completed: number;
-  nudges: string[];
+  nudge: string | null;
 }
 
 export interface ChatMessage {
@@ -46,13 +47,16 @@ export interface ChatMessage {
 
 export interface JobItem {
   id?: string;
-  job_url: string;
+  job_url?: string;
+  url?: string;
   role?: string;
   job_title?: string;
   title?: string;
   company: string;
   location: string;
   description: string;
+  salary?: string | null;
+  date_posted?: string;
   fit_score?: number;
   fit_percentage?: number;
   fitScore?: number;
@@ -70,13 +74,7 @@ export interface JobItem {
 
 export interface JobSearchResponse {
   jobs: JobItem[];
-  message: string | null;
-  location_used: string;
+  count: number;
 }
 
-export interface CoverLetterResponse {
-  letter_text: string;
-  word_count: number;
-  key_cv_points_used: string[];
-  tone: string;
-}
+
