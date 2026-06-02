@@ -25,50 +25,64 @@ CareerPilot helps users manage their job search by combining CV parsing and retr
 - AI: Groq (LLM) for scoring and assistant responses
 - Job scraping: python-jobspy (integrated scraper)
 
-## Quick Start
+## 📖 Running the Application (Manual)
 
-```bash
-git clone <repo> && cd CareerPilot
-cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
-docker-compose up -d
-# Open the frontend at http://localhost:3000 and backend at http://localhost:8000
-```
+### Prerequisites
+- **Docker** and **Docker Compose** (for Method 1)
+- **Node.js** (v18+) and **Python** (3.10+) (for Method 2)
+- A free API key from [console.groq.com](https://console.groq.com)
 
-## Environment Variables
+### Method 1: Running with Docker (Recommended)
+This is the fastest way to get the entire stack running.
 
-> **Note:** For security reasons, API keys are not included in this repository. Please copy `.env.example` to `.env` and insert your `GROQ_API_KEY` and `JWT_SECRET`. You can use your own Groq API key (it's free at console.groq.com).
+1. **Set up your environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   Open the `.env` file and fill in your `GROQ_API_KEY`. You can also set a random `JWT_SECRET`.
 
-Required variables:
+2. **Start the application:**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-```bash
-GROQ_API_KEY=your_groq_api_key_here
-JWT_SECRET=change_this_to_any_random_32_char_string
-DATABASE_URL=sqlite+aiosqlite:///./data/careerpilot.db
+3. **Access the application:**
+   - Frontend Dashboard: [http://localhost:3000](http://localhost:3000)
+   - Backend API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+4. **Stop the application:**
+   ```bash
+   docker-compose down
+   ```
 
-## Local Development (without Docker)
+### Method 2: Running Locally (Without Docker)
+If you prefer to run the services directly on your machine for active development:
 
-Backend:
+1. **Set up your environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
+2. **Start the Backend (FastAPI):**
+   Open a new terminal and run:
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8000
+   ```
 
-Frontend:
+3. **Start the Frontend (Next.js):**
+   Open another terminal and run:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+4. **Access the application:**
+   - The frontend will be available at [http://localhost:3000](http://localhost:3000).
 
 ## Tech Stack
 
