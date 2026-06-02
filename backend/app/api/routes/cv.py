@@ -28,8 +28,10 @@ async def upload_cv(user: CurrentUser, background_tasks: BackgroundTasks, file: 
         content,
         file.filename,
         user["user_id"],
-        background_tasks=background_tasks
+        background_tasks=None
     )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
     return result
 
 
@@ -63,6 +65,8 @@ async def build_cv(user: CurrentUser, background_tasks: BackgroundTasks, data: d
         cv_text.encode(),
         "built_cv.txt",
         user["user_id"],
-        background_tasks=background_tasks
+        background_tasks=None
     )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
     return result

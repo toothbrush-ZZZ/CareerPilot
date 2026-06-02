@@ -133,8 +133,8 @@ export default function CVManager() {
   const validateAndSetFile = (file: File) => {
     setUploadError('');
     const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
-      setUploadError('Please select a PDF, DOCX, or TXT file.');
+    if (ext !== 'pdf' && ext !== 'docx') {
+      setUploadError('Please select a PDF or DOCX file.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -274,7 +274,7 @@ export default function CVManager() {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.docx,.txt"
+                accept=".pdf,.docx"
                 onChange={handleFileChange}
               />
               
@@ -283,7 +283,7 @@ export default function CVManager() {
                 Drag & Drop file here, or <span className="text-sky-500 dark:text-sky-400 hover:underline">browse</span>
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
-                Supports PDF, DOCX, or TXT formats (Max 5MB)
+                Supports PDF or DOCX formats (Max 5MB)
               </p>
             </div>
 
