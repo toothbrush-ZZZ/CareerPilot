@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -7,6 +8,18 @@ from app.jobs.fit import compute_fit
 from app.services.vector_store import query_cv
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+async def _enhance_job_with_fit(job: dict, user_id: str) -> dict:
+    cv_chunks = query_cv(user_id, job.get("description", ""), n=5)
+    if not cv_chunks:
+        return job
+    fit = await compute_fit(job, cv_chunks)
+    job["fit_score"] = fit.get("score")
+    job["reasoning"] = fit.get("reasoning")
+    job["matched_skills"] = fit.get("matched_skills", [])
+    job["missing_skills"] = fit.get("missing_skills", [])
+    return job
 
 
 class JobSearchRequest(BaseModel):
@@ -28,7 +41,10 @@ async def search(req: JobSearchRequest, user: CurrentUser):
         location=req.location or "Dhaka",
         limit=req.limit or 10,
     )
-    return {"jobs": jobs, "count": len(jobs)}
+    user_id = str(user["user_id"])
+    tasks = [_enhance_job_with_fit(job, user_id) for job in jobs]
+    enhanced_jobs = await asyncio.gather(*tasks)
+    return {"jobs": enhanced_jobs, "count": len(enhanced_jobs)}
 
 
 @router.post("/compute-fit")
@@ -58,4 +74,7 @@ async def search_get(
         location=location or "Dhaka",
         limit=limit,
     )
-    return {"jobs": jobs, "count": len(jobs)}
+    user_id = str(user["user_id"])
+    tasks = [_enhance_job_with_fit(job, user_id) for job in jobs]
+    enhanced_jobs = await asyncio.gather(*tasks)
+    return {"jobs": enhanced_jobs, "count": len(enhanced_jobs)}
