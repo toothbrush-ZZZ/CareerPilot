@@ -10,10 +10,18 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ChromaDB hardcodes Path.home()/.cache/chroma as its model download path.
+# By setting HOME=/app at build time, it downloads to /app/.cache/chroma
+# which becomes a real Docker image layer — no runtime downloads ever.
+RUN HOME=/app python -c "from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; ef = DefaultEmbeddingFunction(); ef(['test'])"
+
 COPY . .
 
 RUN mkdir -p /app/data
 # data/ is mounted from ./backend/data via docker-compose volume
+
+# At runtime, keep HOME=/app so ChromaDB finds its cached model
+ENV HOME=/app
 
 EXPOSE 8000
 

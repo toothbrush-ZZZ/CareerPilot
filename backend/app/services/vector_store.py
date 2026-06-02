@@ -1,3 +1,4 @@
+import os
 import logging
 import chromadb
 from typing import List
