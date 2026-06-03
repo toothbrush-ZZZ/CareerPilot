@@ -19,7 +19,8 @@ import {
   SlidersHorizontal,
   FlameKindling,
   Mail,
-  Bot
+  Bot,
+  X
 } from 'lucide-react';
 
 export default function JobHunter() {
@@ -30,11 +31,14 @@ export default function JobHunter() {
     lastSearchResults, 
     lastSearchQuery: query, 
     isSearching,
+    hasSearched,
     searchMessage,
     setLastSearchResults, 
     setLastSearchQuery: setQuery,
     setIsSearching,
-    setSearchMessage
+    setHasSearched,
+    setSearchMessage,
+    clearSearch
   } = useJobStore();
 
   const [expandedJobIndex, setExpandedJobIndex] = useState<number | null>(null);
@@ -59,6 +63,7 @@ export default function JobHunter() {
     setExpandedJobIndex(null);
     setIsSearching(true);
     setSearchMessage('');
+    setHasSearched(true);
     
     try {
       const response = await jobsService.searchJobs(query);
@@ -197,7 +202,16 @@ export default function JobHunter() {
               </div>
 
               {/* Submit */}
-              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40">
+              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/40 gap-3">
+                {hasSearched && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" /> Clear Search
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={isSearching || !query}
@@ -276,7 +290,15 @@ export default function JobHunter() {
                           )}
                           {job.source && (
                             <span className="flex items-center gap-1">
-                              🌐 Source: {job.source}
+                              🌐 Source:{' '}
+                              <a
+                                href={job.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sky-500 hover:underline transition-colors"
+                              >
+                                {job.source}
+                              </a>
                             </span>
                           )}
                         </div>
@@ -381,12 +403,24 @@ export default function JobHunter() {
             </div>
           )}
 
-          {!isSearching && lastSearchResults.length === 0 && (
+          {!isSearching && lastSearchResults.length === 0 && !hasSearched && (
             <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
               <Search className="h-10 w-10 text-slate-350 dark:text-slate-700 mx-auto mb-3" />
               <h4 className="font-bold text-sm text-slate-650 dark:text-slate-455">Ready to Search</h4>
               <p className="text-xs text-slate-450 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-normal font-semibold">
                 Use the search box above to find jobs across LinkedIn, Indeed, and Glassdoor.
+              </p>
+            </div>
+          )}
+
+          {!isSearching && lastSearchResults.length === 0 && hasSearched && (
+            <div className="py-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+              <div className="h-12 w-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Search className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+              </div>
+              <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300">No Jobs Found</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-normal font-medium">
+                We couldn't find any jobs matching your criteria. Try adjusting your search keywords.
               </p>
             </div>
           )}
