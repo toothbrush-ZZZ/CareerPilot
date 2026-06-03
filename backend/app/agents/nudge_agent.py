@@ -18,14 +18,14 @@ def generate_nudge(cv_summary: str, recent_jobs: List[dict]) -> str:
         for j in recent_jobs[:3]
     )
 
+    profile_context = f"\nUser profile summary: {cv_summary[:300]}\n" if cv_summary else ""
+    
     prompt = f"""You are CareerPilot. The user hasn't applied to any jobs this week.
 Write a brief, encouraging nudge (2-3 sentences max) reminding them to apply,
 and mention these specific openings that match their profile:
 
 {job_list}
-
-User profile summary: {cv_summary[:300]}
-
+{profile_context}
 Be warm and motivating, not naggy."""
 
     response = _client.chat.completions.create(

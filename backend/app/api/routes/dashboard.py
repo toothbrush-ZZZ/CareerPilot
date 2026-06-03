@@ -73,15 +73,15 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
         if should_nudge(last_app_row):
             cv_chunks = query_cv(user_id, "job search skills experience", n=3)
             cv_summary = " ".join(cv_chunks)[:300] if cv_chunks else ""
-            if cv_summary:
-                profile_res = await db.execute(select(Profile).where(Profile.id == user_id))
-                profile = profile_res.scalar_one_or_none()
-                desired_role = (profile.desired_role if profile else None) or "software engineer"
-                location = (profile.location_city if profile else None) or "Dhaka"
+            
+            profile_res = await db.execute(select(Profile).where(Profile.id == user_id))
+            profile = profile_res.scalar_one_or_none()
+            desired_role = (profile.desired_role if profile else None) or "software engineer"
+            location = (profile.location_city if profile else None) or "Dhaka"
 
-                recent_jobs = await search_jobs(query=desired_role, location=location, limit=3)
-                if recent_jobs:
-                    stats["nudge"] = generate_nudge(cv_summary, recent_jobs)
+            recent_jobs = await search_jobs(query=desired_role, location=location, limit=3)
+            if recent_jobs:
+                stats["nudge"] = generate_nudge(cv_summary, recent_jobs)
     except Exception as e:
         logger.warning(f"Nudge generation failed (non-fatal): {e}")
 
