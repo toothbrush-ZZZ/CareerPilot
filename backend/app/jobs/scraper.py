@@ -47,11 +47,17 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
     for i, row in df.iterrows():
         min_sal = row.get("min_amount")
         max_sal = row.get("max_amount")
+        curr_val = row.get("currency")
+        curr = str(curr_val).strip().upper() if pd.notna(curr_val) and curr_val else "USD"
+        
+        sym_map = {"USD": "$", "GBP": "£", "EUR": "€", "INR": "₹", "BDT": "৳", "CAD": "CA$", "AUD": "A$"}
+        sym = sym_map.get(curr, f"{curr} ")
+        
         salary = None
         if pd.notna(min_sal) and pd.notna(max_sal):
-            salary = f"${int(min_sal):,} – ${int(max_sal):,}"
+            salary = f"{sym}{int(min_sal):,} – {sym}{int(max_sal):,}"
         elif pd.notna(min_sal):
-            salary = f"${int(min_sal):,}+"
+            salary = f"{sym}{int(min_sal):,}+"
 
         results.append({
             "id": str(i),
