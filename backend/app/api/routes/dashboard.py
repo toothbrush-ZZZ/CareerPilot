@@ -3,7 +3,7 @@ from app.middleware.auth import CurrentUser
 from app.core.database import AsyncSessionLocal
 from app.models import Application, Profile
 from app.agents.nudge_agent import should_nudge, generate_nudge
-from app.services.vector_store import query_cv
+from app.services.vector_store import query_cv, _collection
 from app.jobs.scraper import search_jobs
 from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,12 +60,19 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
     )
     last_app_row = last_app_res.scalar()
 
+    try:
+        col = _collection(user_id)
+        skills_extracted = col.count()
+    except Exception:
+        skills_extracted = 0
+
     stats = {
         "total_applications": total_apps,
         "this_week": this_week,
         "by_status": by_status,
         "goals_total": goals_total,
         "goals_completed": goals_completed,
+        "skills_extracted": skills_extracted,
         "nudge": None,
     }
 
