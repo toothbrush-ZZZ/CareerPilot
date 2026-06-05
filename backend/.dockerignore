@@ -13,3 +13,5 @@ dist/
 .dockerignore
 tests/
 .pytest_cache/
+data/
+uploads/
