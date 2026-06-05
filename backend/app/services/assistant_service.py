@@ -1,10 +1,9 @@
 import os
-from groq import AsyncGroq
 from typing import List, Optional
 from app.core.config import get_settings
+from app.core.llm import chat as llm_chat
 
 settings = get_settings()
-_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 SYSTEM_PROMPT = """You are CareerPilot, an expert AI career co-pilot.
 You have been given the user's CV context. Use it as the single source of truth.
@@ -46,10 +45,9 @@ async def chat(
         {"role": "user", "content": user_message},
     ]
 
-    response = await _client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+    reply = await llm_chat(
         messages=messages,
         max_tokens=1000,
         temperature=0.7,
     )
-    return response.choices[0].message.content
+    return reply

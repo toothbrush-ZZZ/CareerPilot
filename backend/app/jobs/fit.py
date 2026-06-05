@@ -1,12 +1,11 @@
 import os
 import json
 import re
-from groq import AsyncGroq
-from typing import List
 from app.core.config import get_settings
+from app.core.llm import chat
+from typing import List
 
 settings = get_settings()
-_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 
 async def compute_fit(job: dict, cv_chunks: List[str]) -> dict:
@@ -30,15 +29,14 @@ Respond ONLY with valid JSON, no markdown fences, no preamble:
   "reasoning": "<2 sentences explaining the match based on skills>"
 }}"""
 
-    response = await _client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+    raw_response = await chat(
         messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
+        json_mode=True,
         max_tokens=400,
         temperature=0.2,
     )
 
-    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
+    raw = re.sub(r"```json|```", "", raw_response).strip()
 
     try:
         data = json.loads(raw)

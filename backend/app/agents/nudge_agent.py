@@ -1,11 +1,10 @@
 import os
 from datetime import datetime, timedelta
-from groq import AsyncGroq
-from typing import List, Optional
 from app.core.config import get_settings
+from app.core.llm import chat
+from typing import List, Optional
 
 settings = get_settings()
-_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 
 def should_nudge(last_application_date: Optional[datetime]) -> bool:
@@ -30,10 +29,9 @@ and mention these specific openings that match their profile:
 {profile_context}
 Be warm and motivating, not naggy."""
 
-    response = await _client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+    response_text = await chat(
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150,
         temperature=0.8,
     )
-    return response.choices[0].message.content
+    return response_text
