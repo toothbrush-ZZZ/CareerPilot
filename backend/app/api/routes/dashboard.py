@@ -5,7 +5,7 @@ from app.models import Application, Profile
 from app.agents.nudge_agent import should_nudge, generate_nudge
 from app.services.vector_store import query_cv, _collection
 from app.jobs.scraper import search_jobs
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func, text, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -49,7 +49,10 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
 
     from app.models import Goal
     goals_res = await db.execute(
-        select(func.count(), func.sum(text("CASE WHEN completed = 1 THEN 1 ELSE 0 END"))).where(Goal.user_id == user_id)
+        select(
+            func.count(),
+            func.sum(case((Goal.completed == True, 1), else_=0))
+        ).where(Goal.user_id == user_id)
     )
     goals_row = goals_res.one()
     goals_total = goals_row[0] or 0
@@ -66,12 +69,35 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
     except Exception:
         skills_extracted = 0
 
+    streak_res = await db.execute(
+        select(Application.applied_at).where(Application.user_id == user_id).order_by(Application.applied_at.desc())
+    )
+    app_dates = [row[0].date() for row in streak_res.all() if row[0]]
+    unique_dates = sorted(list(set(app_dates)), reverse=True)
+    
+    streak_counter = 0
+    today = datetime.utcnow().date()
+    
+    if unique_dates:
+        current_date = unique_dates[0]
+        if (today - current_date).days <= 1:
+            streak_counter = 1
+            for i in range(1, len(unique_dates)):
+                if (unique_dates[i-1] - unique_dates[i]).days == 1:
+                    streak_counter += 1
+                else:
+                    break
+
+    roadmap_progress_percent = int((goals_completed / goals_total) * 100) if goals_total > 0 else 0
+
     stats = {
         "total_applications": total_apps,
         "this_week": this_week,
         "by_status": by_status,
         "goals_total": goals_total,
         "goals_completed": goals_completed,
+        "roadmap_progress_percent": roadmap_progress_percent,
+        "streak_counter": streak_counter,
         "skills_extracted": skills_extracted,
         "nudge": None,
     }

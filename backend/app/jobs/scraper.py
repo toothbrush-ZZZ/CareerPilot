@@ -78,8 +78,10 @@ async def parse_natural_lang_query(nl_query: str) -> dict:
     import json
     import os
     from groq import AsyncGroq
+    from app.core.config import get_settings
     
-    api_key = os.getenv("GROQ_API_KEY")
+    settings = get_settings()
+    api_key = settings.GROQ_API_KEY
     if not api_key:
         return {"query": nl_query, "location": "Dhaka"}
     

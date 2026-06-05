@@ -3,8 +3,10 @@ import json
 import re
 from groq import AsyncGroq
 from typing import List
+from app.core.config import get_settings
 
-_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+settings = get_settings()
+_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 
 async def compute_fit(job: dict, cv_chunks: List[str]) -> dict:

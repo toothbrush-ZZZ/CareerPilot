@@ -2,8 +2,10 @@ import os
 from datetime import datetime, timedelta
 from groq import AsyncGroq
 from typing import List, Optional
+from app.core.config import get_settings
 
-_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+settings = get_settings()
+_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 
 def should_nudge(last_application_date: Optional[datetime]) -> bool:

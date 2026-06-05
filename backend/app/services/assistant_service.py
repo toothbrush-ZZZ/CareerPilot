@@ -1,8 +1,10 @@
 import os
 from groq import AsyncGroq
 from typing import List, Optional
+from app.core.config import get_settings
 
-_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+settings = get_settings()
+_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 SYSTEM_PROMPT = """You are CareerPilot, an expert AI career co-pilot.
 You have been given the user's CV context. Use it as the single source of truth.
