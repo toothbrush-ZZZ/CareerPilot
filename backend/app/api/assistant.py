@@ -34,7 +34,7 @@ async def assistant_chat(req: ChatRequest, user: CurrentUser):
         job_context = f"Title: {req.job_title or ''}\n{req.job_description or ''}"
 
     history = await get_history(req.session_id)
-    reply = chat(req.message, cv_context, history, job_context)
+    reply = await chat(req.message, cv_context, history, job_context)
 
     await append_message(req.session_id, "user", req.message)
     await append_message(req.session_id, "assistant", reply)

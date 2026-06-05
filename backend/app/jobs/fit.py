@@ -1,10 +1,10 @@
 import os
 import json
 import re
-from groq import Groq
+from groq import AsyncGroq
 from typing import List
 
-_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 async def compute_fit(job: dict, cv_chunks: List[str]) -> dict:
@@ -28,7 +28,7 @@ Respond ONLY with valid JSON, no markdown fences, no preamble:
   "reasoning": "<2 sentences explaining the match based on skills>"
 }}"""
 
-    response = _client.chat.completions.create(
+    response = await _client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"},

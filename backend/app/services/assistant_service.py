@@ -1,8 +1,8 @@
 import os
-from groq import Groq
+from groq import AsyncGroq
 from typing import List, Optional
 
-_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
 
 SYSTEM_PROMPT = """You are CareerPilot, an expert AI career co-pilot.
 You have been given the user's CV context. Use it as the single source of truth.
@@ -26,7 +26,7 @@ You help with:
 Keep responses clear, structured, and actionable."""
 
 
-def chat(
+async def chat(
     user_message: str,
     cv_context: str,
     history: List[dict],
@@ -44,7 +44,7 @@ def chat(
         {"role": "user", "content": user_message},
     ]
 
-    response = _client.chat.completions.create(
+    response = await _client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=messages,
         max_tokens=1000,

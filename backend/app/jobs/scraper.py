@@ -74,17 +74,17 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
     return results
 
 
-def parse_natural_lang_query(nl_query: str) -> dict:
+async def parse_natural_lang_query(nl_query: str) -> dict:
     import json
     import os
-    from groq import Groq
+    from groq import AsyncGroq
     
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return {"query": nl_query, "location": "Dhaka"}
     
     try:
-        client = Groq(api_key=api_key)
+        client = AsyncGroq(api_key=api_key)
         prompt = f"""You are a query parsing assistant. Extract the job search term/keywords and the location from the user's natural language request.
 User request: "{nl_query}"
 
@@ -93,7 +93,7 @@ Respond ONLY with a JSON object in this format (no other text, no markdown block
   "query": "the refined job search keywords (e.g. 'ML Intern')",
   "location": "the extracted location or 'Dhaka' if not specified (e.g. 'San Francisco')"
 }}"""
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
@@ -110,7 +110,7 @@ Respond ONLY with a JSON object in this format (no other text, no markdown block
 
 
 async def search_jobs(query: str, location: str = "Dhaka", limit: int = 10) -> List[dict]:
-    parsed = parse_natural_lang_query(query)
+    parsed = await parse_natural_lang_query(query)
     refined_query = parsed["query"]
     extracted_location = parsed["location"]
     

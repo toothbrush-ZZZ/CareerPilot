@@ -1,9 +1,9 @@
 import os
 from datetime import datetime, timedelta
-from groq import Groq
+from groq import AsyncGroq
 from typing import List, Optional
 
-_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def should_nudge(last_application_date: Optional[datetime]) -> bool:
@@ -12,7 +12,7 @@ def should_nudge(last_application_date: Optional[datetime]) -> bool:
     return datetime.utcnow() - last_application_date > timedelta(days=7)
 
 
-def generate_nudge(cv_summary: str, recent_jobs: List[dict]) -> str:
+async def generate_nudge(cv_summary: str, recent_jobs: List[dict]) -> str:
     job_list = "\n".join(
         f"- {j['title']} at {j['company']} ({j['location']})"
         for j in recent_jobs[:3]
@@ -28,7 +28,7 @@ and mention these specific openings that match their profile:
 {profile_context}
 Be warm and motivating, not naggy."""
 
-    response = _client.chat.completions.create(
+    response = await _client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150,
