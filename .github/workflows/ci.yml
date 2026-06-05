@@ -1,0 +1,109 @@
+name: CareerPilot CI
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  backend-test:
+    name: Backend Lint & E2E
+    runs-on: ubuntu-latest
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      JWT_SECRET: "ci-dummy-jwt-secret-must-be-at-least-32-chars"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r backend/requirements.txt
+
+      - name: Lint with Flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 backend/app --select=E9,F63,F7,F82,F811 --show-source --statistics
+
+      - name: Run E2E Evaluations
+        run: |
+          # Create data directory for SQLite
+          mkdir -p backend/data
+          
+          # Start the backend server in the background
+          cd backend
+          uvicorn app.main:app --port 8000 &
+          SERVER_PID=$!
+          
+          # Wait for server to be ready (ChromaDB can take ~10-20s to download models on fresh runners)
+          echo "Waiting for server to start..."
+          timeout 60 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)" != "200" ]]; do sleep 2; done' || { echo "Server failed to start"; kill $SERVER_PID; exit 1; }
+          echo "Server is up!"
+          
+          # Run the auth login sequence to get a token
+          export BACKEND_URL=http://localhost:8000
+          TOKEN=$(curl -s -X POST $BACKEND_URL/api/v1/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"demo@careerpilot.ai","password":"demopassword"}' \
+            | python -c "import sys,json; print(json.load(sys.stdin).get('access_token', ''))")
+          
+          # Export token and run tests
+          export AUTH_TOKEN=$TOKEN
+          cd ..
+          python evals/run_evals.py
+          
+          # Cleanup
+          kill $SERVER_PID
+
+  frontend-test:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Linter
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Test Build (Standalone)
+        working-directory: ./frontend
+        run: npm run build
+
+  docker-build:
+    name: Verify Docker Compose Build
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Backend Docker Build
+        run: docker build -t careerpilot-backend ./backend
+
+      - name: Verify Frontend Docker Build
+        run: docker build -t careerpilot-frontend ./frontend
