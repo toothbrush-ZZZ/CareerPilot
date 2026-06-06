@@ -29,7 +29,7 @@ export const jobsService = {
   searchJobs: async (query: string, location?: string, limit = 10): Promise<JobSearchResponse> => {
     return api.post<JobSearchResponse>('/api/v1/jobs/search', {
       query,
-      location: location || 'Dhaka',
+      location: location || 'Bangladesh',
       limit
     });
   },

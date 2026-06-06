@@ -38,7 +38,7 @@ class FitRequest(BaseModel):
 async def search(req: JobSearchRequest, user: CurrentUser):
     jobs = await _search_jobs(
         query=req.query,
-        location=req.location or "Dhaka",
+        location=req.location or "Bangladesh",
         limit=req.limit or 10,
     )
     user_id = str(user["user_id"])
@@ -71,7 +71,7 @@ async def search_get(
 ):
     jobs = await _search_jobs(
         query=query,
-        location=location or "Dhaka",
+        location=location or "Bangladesh",
         limit=limit,
     )
     user_id = str(user["user_id"])

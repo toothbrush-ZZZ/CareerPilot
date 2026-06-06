@@ -110,7 +110,7 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
             profile_res = await db.execute(select(Profile).where(Profile.id == user_id))
             profile = profile_res.scalar_one_or_none()
             desired_role = (profile.desired_role if profile else None) or "software engineer"
-            location = (profile.location_city if profile else None) or "Dhaka"
+            location = (profile.location_city if profile else None) or "Bangladesh"
 
             recent_jobs = await search_jobs(query=desired_role, location=location, limit=3)
             if recent_jobs:
