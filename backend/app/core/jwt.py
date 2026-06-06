@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from jose import jwt, JWTError, ExpiredSignatureError
+import jwt
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from fastapi import HTTPException, status
 from app.core.config import get_settings
 
@@ -41,7 +42,7 @@ def verify_jwt(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
         )
-    except JWTError:
+    except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

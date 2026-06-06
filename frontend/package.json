@@ -25,7 +25,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.1.0",
-    "@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.5.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^20",
@@ -37,5 +37,10 @@
     "jest-environment-jsdom": "^29.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom",
+    "postcss": "^8.5.10"
   }
 }
