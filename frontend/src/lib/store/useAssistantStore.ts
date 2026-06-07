@@ -6,6 +6,7 @@ import { useAppStore } from './useAppStore';
 interface AssistantState {
   messages: Message[];
   isTyping: boolean;
+  sessionId: string;
   addMessage: (msg: Message) => void;
   updateMessage: (id: string, content: string) => void;
   setIsTyping: (v: boolean) => void;
@@ -24,13 +25,14 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
     }
   ],
   isTyping: false,
+  sessionId: Date.now().toString(),
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
   updateMessage: (id, content) => set((state) => ({
     messages: state.messages.map(m => m.id === id ? { ...m, content } : m)
   })),
   setIsTyping: (v) => set({ isTyping: v }),
   sendMessage: async (content: string, jobTitle?: string, jobCompany?: string) => {
-    const { messages, addMessage, updateMessage, setIsTyping } = get();
+    const { messages, addMessage, updateMessage, setIsTyping, sessionId } = get();
     
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -43,7 +45,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
     setIsTyping(true);
     
     try {
-      const fullContent = await sendChatMessage([...messages, userMsg], content, jobTitle, jobCompany);
+      const fullContent = await sendChatMessage([...messages, userMsg], content, sessionId, jobTitle, jobCompany);
       
       const assistantMsgId = (Date.now() + 1).toString();
       addMessage({
@@ -79,8 +81,9 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
   clearSession: async () => {
     try {
       const { clearChatSession } = await import('../utils/api');
-      await clearChatSession();
+      await clearChatSession(get().sessionId);
       set({
+        sessionId: Date.now().toString(),
         messages: [
           {
             id: 'welcome',

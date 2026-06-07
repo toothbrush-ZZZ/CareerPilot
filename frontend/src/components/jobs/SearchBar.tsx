@@ -2,28 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Search, Sparkles, Clock } from 'lucide-react';
 import { useJobStore } from '@/lib/store/useJobStore';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store/useAppStore';
 
 export function SearchBar() {
   const { query, setQuery, searchJobs, isSearching } = useJobStore();
+  const { user } = useAppStore();
   const [localQuery, setLocalQuery] = useState(query);
   const [focused, setFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const router = useRouter();
 
+  const getStorageKey = () => `careerpilot_recent_searches_${user?.id || 'guest'}`;
+
   useEffect(() => {
-    const saved = localStorage.getItem('careerpilot_recent_searches');
+    const saved = localStorage.getItem(getStorageKey());
     if (saved) {
       try {
         setRecentSearches(JSON.parse(saved));
       } catch {}
+    } else {
+      setRecentSearches([]);
     }
-  }, []);
+  }, [user?.id]);
 
   const saveRecentSearch = (search: string) => {
     if (!search.trim()) return;
     const updated = [search, ...recentSearches.filter(s => s !== search)].slice(0, 5);
     setRecentSearches(updated);
-    localStorage.setItem('careerpilot_recent_searches', JSON.stringify(updated));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updated));
   };
 
   const handleSearch = (e: React.FormEvent) => {

@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ApplicationCard } from '@/lib/types';
 import { StatusBadge } from '../ui/StatusBadge';
-import { Calendar, ExternalLink, Trash2 } from 'lucide-react';
+import { Calendar, ExternalLink, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useTrackerStore } from '@/lib/store/useTrackerStore';
 
@@ -12,7 +12,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ card }: KanbanCardProps) {
-  const { removeCard } = useTrackerStore();
+  const { removeCard, moveCard } = useTrackerStore();
   const {
     attributes,
     listeners,
@@ -23,6 +23,9 @@ export function KanbanCard({ card }: KanbanCardProps) {
   } = useSortable({ id: card.id, data: { ...card } });
 
   const isRejected = card.columnId === 'rejected';
+  const [userExpanded, setUserExpanded] = useState(false);
+  const isExpanded = isRejected ? userExpanded : true;
+  const hasDetails = Boolean(card.notes || card.jobUrl);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -43,7 +46,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
       role="article"
       aria-label={`${card.role} at ${card.company}`}
       className={cn(
-        "rounded-[10px] px-[14px] py-[12px] cursor-grab active:cursor-grabbing flex flex-col relative group card-hover border-[1px] border-[var(--cp-border)] min-h-[140px]",
+        "rounded-[8px] px-3 py-2.5 cursor-grab active:cursor-grabbing flex flex-col relative group card-hover border-[1px] border-[var(--cp-border)]",
         isRejected ? "opacity-70 hover:opacity-100" : ""
       )}
     >
@@ -61,10 +64,15 @@ export function KanbanCard({ card }: KanbanCardProps) {
           {card.role}
         </h4>
         <div className="flex items-center gap-1">
-          <StatusBadge status={card.columnId} className="flex-shrink-0" />
+          <StatusBadge 
+            status={card.columnId} 
+            className="flex-shrink-0" 
+            onChange={(newStatus) => moveCard(card.id, newStatus)}
+          />
           <button 
             onClick={(e) => { e.stopPropagation(); removeCard(card.id); }}
-            className="p-1 rounded-md text-[var(--cp-text-muted)] hover:text-[var(--cp-danger)] transition-colors opacity-0 group-hover:opacity-100"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="p-1 rounded-md text-[var(--cp-text-muted)] hover:text-[var(--cp-danger)] transition-colors"
             title="Delete Application"
           >
             <Trash2 size={14} />
@@ -72,34 +80,40 @@ export function KanbanCard({ card }: KanbanCardProps) {
         </div>
       </div>
 
-      <div className="text-[11px] mb-3" style={{ color: 'var(--cp-text-muted)' }}>
+      <div className="text-[11px] mb-1" style={{ color: 'var(--cp-text-muted)' }}>
         {card.company}
         {card.location && <span className="ml-1 opacity-70">• {card.location}</span>}
       </div>
 
-      <div className="mt-auto pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--cp-border)' }}>
-        {(card.notes || card.deadline || card.jobUrl) ? (
-          <>
-            {card.jobUrl && (
-              <a href={card.jobUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-medium hover:underline w-fit" style={{ color: 'var(--cp-accent)' }}>
-                View Job <ExternalLink size={12} strokeWidth={1.5} />
-              </a>
-            )}
-            {card.deadline && (
-              <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--cp-text-muted)' }}>
-                <Calendar size={12} strokeWidth={1.5} /> Deadline: {card.deadline}
-              </div>
-            )}
-            {card.notes && (
-              <p className="text-[11px] italic line-clamp-2" style={{ color: 'var(--cp-text-secondary)' }}>
-                {card.notes}
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="h-[20px] w-full" /> /* Invisible placeholder to enforce consistent gap slot */
-        )}
-      </div>
+      {isRejected && hasDetails && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setUserExpanded(!userExpanded); }}
+          className="flex items-center gap-1 text-[10px] font-semibold text-[var(--cp-text-muted)] hover:text-[var(--cp-accent)] transition-colors mb-1"
+        >
+          {userExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          {userExpanded ? 'Hide Details' : 'Show Details'}
+        </button>
+      )}
+
+      {isExpanded && hasDetails && (
+        <div className="mt-auto pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--cp-border)' }}>
+          {card.jobUrl && (
+            <a href={card.jobUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-medium hover:underline w-fit" style={{ color: 'var(--cp-accent)' }}>
+              View Job <ExternalLink size={12} strokeWidth={1.5} />
+            </a>
+          )}
+          {card.appliedAt && (
+            <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--cp-text-muted)' }}>
+              <Calendar size={12} strokeWidth={1.5} /> Applied: {new Date(card.appliedAt).toLocaleDateString()}
+            </div>
+          )}
+          {card.notes && (
+            <p className="text-[11px] italic line-clamp-2" style={{ color: 'var(--cp-text-secondary)' }}>
+              {card.notes}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

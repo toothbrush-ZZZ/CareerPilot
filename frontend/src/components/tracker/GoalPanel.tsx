@@ -46,17 +46,17 @@ export function GoalPanel() {
       </div>
 
       
-      <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar h-full items-start">
+      <div className="flex flex-col gap-3 overflow-y-auto pr-2 pb-4 custom-scrollbar h-full items-stretch">
         {goals.map(goal => (
           <div
             key={goal.id}
-            className="w-56 flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2.5 cursor-pointer transition-all duration-200 group"
+            className={`w-full flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2.5 cursor-pointer transition-all duration-300 group border border-[var(--cp-border)] ${
+              !goal.completed 
+                ? 'border-l-[2px] border-l-[var(--cp-border)] hover:border-l-[var(--cp-accent)]' 
+                : ''
+            }`}
             style={{
               background: 'var(--cp-card)',
-              border: goal.completed
-                ? '1px solid var(--cp-border)'
-                : `1px solid var(--cp-border)`,
-              borderLeft: !goal.completed ? `2px solid var(--cp-accent)` : `2px solid var(--cp-border)`,
               opacity: goal.completed ? 0.6 : 1,
             }}
             onClick={() => toggleGoal(goal.id)}
@@ -123,7 +123,7 @@ export function GoalPanel() {
         
         {isAdding && (
           <div
-            className="w-56 flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2"
+            className="w-full flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2"
             style={{
               background: 'var(--cp-card)',
               border: '1px solid var(--cp-accent)',

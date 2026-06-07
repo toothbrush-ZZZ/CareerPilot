@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, FileText, CheckCircle2, Trash2, Edit3 } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useAppStore';
+import { useDashboardStore } from '@/lib/store/useDashboardStore';
 import { PulseLoader } from '../ui/PulseLoader';
 import { uploadCV, deleteCV, buildCV, getCVStatus } from '@/lib/utils/api';
 
@@ -44,6 +45,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
         setUser({ ...user, cvFileName: file.name, cvUploadedAt: new Date().toISOString() });
       }
       addToast({ message: 'CV uploaded successfully.', type: 'success' });
+      useDashboardStore.getState().loadData(true);
       onUploadComplete(result.sections || [], result.skills || []);
     } catch {
       addToast({ message: 'Failed to upload CV. Please try again.', type: 'error' });
@@ -62,6 +64,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
       }
       setFileMeta(null);
       addToast({ message: 'CV deleted successfully.', type: 'success' });
+      useDashboardStore.getState().loadData(true);
       onUploadComplete([], []);
     } catch {
       addToast({ message: 'Failed to delete CV.', type: 'error' });
@@ -101,6 +104,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
       }
       setFileMeta({ size: '1 KB', type: 'txt' });
       addToast({ message: 'CV built and indexed successfully.', type: 'success' });
+      useDashboardStore.getState().loadData(true);
       onUploadComplete(result.sections || [], result.skills || []);
     } catch {
       addToast({ message: 'Failed to build CV. Please try again.', type: 'error' });

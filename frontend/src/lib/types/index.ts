@@ -50,6 +50,7 @@ export interface ApplicationCard {
   appliedAt: string;
   deadline?: string;
   notes?: string;
+  interviewDate?: string;
   columnId: KanbanColumnId;
 }
 
@@ -70,12 +71,45 @@ export interface Goal {
 }
 
 export interface DashboardStats {
-  streak: number;
-  applicationsThisWeek: number;
-  skillsAdded: number;
-  roadmapPercent: number;
-  weeklyActivity: number[]; // 7 values, one per day
-  nudge?: { message: string; link_text: string; link_href: string } | null;
+  total_applications: number;
+  this_week: number;
+  by_status: Record<string, number>;
+  goals_total: number;
+  goals_completed: number;
+  roadmap_progress_percent: number;
+  streak_counter: number;
+  skills_added: number;
+  weekly_activity: number[]; // 7 values, Mon-Sun
+  roadmap_percent: number;
+  active_goals: Array<{
+    id: string;
+    title: string;
+    target: number;
+    current: number;
+    due_date?: string;
+  }>;
+  due_this_week: Array<{
+    id: string;
+    type: 'goal' | 'interview' | 'todo';
+    title: string;
+    date: string;
+  }>;
+  nudge?: { 
+    type: string; 
+    copy: string; 
+    sub_copy: string; 
+    jobs: Array<{ title: string; company: string; job_id: string }>;
+    cta_label: string;
+    cta_url: string;
+  } | null;
+}
+
+export interface Task {
+  id: string;
+  goal_id: string;
+  title: string;
+  due_date?: string;
+  completed: boolean;
 }
 
 export interface CVSection {

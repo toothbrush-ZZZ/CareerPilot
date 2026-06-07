@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Briefcase, Bot, KanbanSquare, UserCheck, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bot, KanbanSquare, UserCheck, LogOut, FileText, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { setAuthToken } from '@/lib/utils/api';
 
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
 export function CommandDock() {
   const pathname = usePathname();
   const router = useRouter();
+  const { cvUploaded, user } = useAppStore();
 
   return (
     <div className="fixed bottom-5 inset-x-0 flex justify-center z-50 px-4">
@@ -44,6 +45,8 @@ export function CommandDock() {
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (pathname === '/' && item.href === '/dashboard');
           const Icon = item.icon;
+          const isResume = item.href === '/cv';
+          const displayLabel = item.label;
 
           return (
             <button
@@ -78,16 +81,24 @@ export function CommandDock() {
 
               
               <div className="relative z-10 flex flex-col items-center gap-1">
-                <Icon
-                  size={24}
-                  className="transition-transform duration-150 group-hover:scale-110"
-                  strokeWidth={isActive ? 2.2 : 1.5}
-                />
+                <div className="relative">
+                  <Icon
+                    size={24}
+                    className="transition-transform duration-150 group-hover:scale-110"
+                    strokeWidth={isActive ? 2.2 : 1.5}
+                  />
+                  {isResume && !cvUploaded && (
+                    <AlertTriangle 
+                      size={12} 
+                      className="absolute -top-1 -right-2 text-yellow-500 fill-yellow-500 animate-pulse"
+                    />
+                  )}
+                </div>
                 <span
-                  className="text-[9px] sm:text-[10px] font-semibold tracking-wide leading-none transition-colors duration-150"
+                  className="text-[9px] sm:text-[10px] font-semibold tracking-wide leading-none transition-colors duration-150 truncate max-w-[60px] text-center"
                   style={{ color: isActive ? 'var(--cp-accent)' : 'var(--cp-text-muted)' }}
                 >
-                  {item.label}
+                  {displayLabel}
                 </span>
               </div>
             </button>
@@ -99,7 +110,7 @@ export function CommandDock() {
         <button
           onClick={() => {
             setAuthToken('');
-            useAppStore.getState().setUser(null);
+            useAppStore.getState().logout();
             router.push('/');
           }}
           className="relative flex flex-col items-center gap-1 px-3.5 sm:px-4 py-2.5 rounded-xl transition-all outline-none group focus-visible:ring-2 text-[var(--cp-text-muted)] hover:text-[var(--cp-danger)]"

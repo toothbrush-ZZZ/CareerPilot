@@ -10,11 +10,10 @@ interface JobState {
   selectedJob: Job | null;
   filters: JobFilters;
   setQuery: (q: string) => void;
-  setJobs: (jobs: Job[]) => void;
   setIsSearching: (v: boolean) => void;
   setSelectedJob: (job: Job | null) => void;
   setFilters: (f: Partial<JobFilters>) => void;
-  searchJobs: () => Promise<void>;
+  searchJobs: (force?: boolean) => Promise<void>;
 }
 
 export const useJobStore = create<JobState>((set, get) => ({
@@ -24,13 +23,15 @@ export const useJobStore = create<JobState>((set, get) => ({
   selectedJob: null,
   filters: {},
   setQuery: (q) => set({ query: q }),
-  setJobs: (jobs) => set({ jobs }),
   setIsSearching: (v) => set({ isSearching: v }),
   setSelectedJob: (job) => set({ selectedJob: job }),
   setFilters: (f) => set((state) => ({ filters: { ...state.filters, ...f } })),
-  searchJobs: async () => {
-    const { query, filters } = get();
-    set({ isSearching: true });
+  searchJobs: async (force = false) => {
+    const { query, filters, jobs } = get();
+    // Only show the full-screen loader if we have NO data
+    if (jobs.length === 0) {
+      set({ isSearching: true });
+    }
     try {
       const results = await searchJobs(query, filters);
       set({ jobs: results });

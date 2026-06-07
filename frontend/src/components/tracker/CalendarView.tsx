@@ -30,30 +30,30 @@ export function CalendarView() {
   return (
     <div className="flex flex-col h-full rounded-xl" style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
       
-      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--cp-border)' }}>
-        <h2 className="text-xs font-semibold tracking-widest flex items-center gap-2" style={{ color: 'var(--cp-text-secondary)' }}>
-          <CalendarIcon size={20} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
+      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--cp-border)' }}>
+        <h2 className="text-[10px] font-semibold tracking-widest flex items-center gap-1.5 uppercase" style={{ color: 'var(--cp-text-secondary)' }}>
+          <CalendarIcon size={14} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
           Calendar
         </h2>
-        <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-1 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
-            <ChevronLeft size={16} />
+        <div className="flex items-center gap-1">
+          <button onClick={prevMonth} className="p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
+            <ChevronLeft size={14} />
           </button>
-          <span className="text-sm font-semibold min-w-[100px] text-center" style={{ color: 'var(--cp-text-primary)' }}>
+          <span className="text-[11px] font-semibold min-w-[70px] text-center" style={{ color: 'var(--cp-text-primary)' }}>
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </span>
-          <button onClick={nextMonth} className="p-1 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
-            <ChevronRight size={16} />
+          <button onClick={nextMonth} className="p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
+            <ChevronRight size={14} />
           </button>
         </div>
       </div>
 
       
-      <div className="flex-1 flex flex-col p-4 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col p-2 overflow-visible">
         
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-1">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="text-center text-[10px] font-semibold tracking-wider" style={{ color: 'var(--cp-text-muted)' }}>
+            <div key={d} className="text-center text-[9px] font-semibold tracking-wider uppercase" style={{ color: 'var(--cp-text-muted)' }}>
               {d}
             </div>
           ))}
@@ -62,47 +62,55 @@ export function CalendarView() {
         
         <div className="grid grid-cols-7 gap-1 flex-1">
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="min-h-[60px] rounded-md opacity-20" style={{ background: 'var(--cp-surface)' }} />
+            <div key={`empty-${i}`} className="min-h-[28px]" />
           ))}
           
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
             const dayGoals = getGoalsForDay(day);
+            const hasGoals = dayGoals.length > 0;
+            const hasIncompleteGoals = dayGoals.some(g => !g.completed);
             
             return (
               <div 
                 key={day} 
-                className="min-h-[60px] rounded-md p-1.5 flex flex-col gap-1 transition-colors hover:bg-[var(--cp-surface)]"
-                style={{ 
-                  background: isToday ? 'var(--cp-accent-glow)' : 'transparent',
-                  border: isToday ? '1px solid var(--cp-border-accent)' : '1px solid var(--cp-border)',
-                }}
+                className="relative group min-h-[28px] p-1 flex flex-col items-center justify-center cursor-default"
               >
                 <div 
-                  className={`text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-[var(--cp-accent)] text-black' : ''}`}
-                  style={{ color: isToday ? '#000' : 'var(--cp-text-secondary)' }}
+                  className={`text-[10px] font-semibold w-5 h-5 flex items-center justify-center rounded-full transition-all ${hasGoals ? 'cursor-pointer hover:bg-[var(--cp-surface)]' : ''}`}
+                  style={{ 
+                    color: isToday ? '#000' : (hasIncompleteGoals ? 'var(--cp-accent)' : 'var(--cp-text-secondary)'),
+                    background: isToday ? 'var(--cp-accent)' : 'transparent',
+                    textShadow: hasIncompleteGoals && !isToday ? '0 0 8px var(--cp-accent)' : 'none'
+                  }}
                 >
                   {day}
                 </div>
                 
-                <div className="flex flex-col gap-1 overflow-y-auto custom-scrollbar flex-1">
-                  {dayGoals.map(goal => (
-                    <div 
-                      key={goal.id}
-                      onClick={() => toggleGoal(goal.id)}
-                      className="text-[9px] leading-tight px-1 py-0.5 rounded cursor-pointer truncate transition-opacity hover:opacity-80"
-                      style={{ 
-                        background: goal.completed ? 'var(--cp-surface)' : 'var(--cp-accent-dim)',
-                        color: goal.completed ? 'var(--cp-text-muted)' : 'var(--cp-accent)',
-                        textDecoration: goal.completed ? 'line-through' : 'none'
-                      }}
-                      title={goal.text}
-                    >
-                      {goal.text}
+                {hasGoals && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col pb-1.5 z-[100]">
+                    <div className="flex flex-col gap-1 p-2 rounded-md shadow-lg w-max max-w-[150px]"
+                         style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                      <div className="text-[9px] font-bold text-[var(--cp-text-muted)] mb-0.5 uppercase tracking-wider text-center">
+                        Due on {day}
+                      </div>
+                      {dayGoals.map(goal => (
+                        <div 
+                          key={goal.id}
+                          onClick={(e) => { e.stopPropagation(); toggleGoal(goal.id); }}
+                          className={`text-[9px] leading-tight px-1.5 py-1 rounded cursor-pointer truncate transition-colors ${
+                            goal.completed 
+                              ? 'bg-[var(--cp-surface)] text-[var(--cp-text-muted)] line-through' 
+                              : 'bg-[var(--cp-surface)] text-[var(--cp-text-primary)] hover:bg-[var(--cp-accent)] hover:text-black'
+                          }`}
+                        >
+                          {goal.text}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  React.useEffect(() => {
+    if (useAppStore.getState().isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [router]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -36,25 +42,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoAccess = async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const demoEmail = 'demo@careerpilot.ai';
-      const demoPassword = 'demopassword';
-
-      const authData = await authService.login(demoEmail, demoPassword);
-      const profile = await authService.getProfile();
-
-      login(authData.access_token, profile);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Demo backend is currently offline. Please run docker services.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <main 
@@ -78,31 +65,7 @@ export default function LoginPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--cp-text-secondary)' }}>Navigate your career with intelligent tools</p>
         </div>
 
-        
-        <div 
-          className="mb-6 p-4 rounded-2xl border text-center"
-          style={{ background: 'var(--cp-surface)', borderColor: 'var(--cp-border-accent)' }}
-        >
-          <p className="text-[11px] font-medium tracking-[-0.01em] mb-2" style={{ color: 'var(--cp-text-primary)' }}>💡 Express preview</p>
-          <p className="text-xs mb-3" style={{ color: 'var(--cp-text-secondary)' }}>
-            Explore the dashboard immediately with the fully seeded demo data account.
-          </p>
-          <button
-            type="button"
-            onClick={handleDemoAccess}
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ background: 'var(--cp-text-primary)', color: 'var(--cp-bg)' }}
-          >
-            <LogIn className="h-3.5 w-3.5" /> Launch Demo Account
-          </button>
-        </div>
 
-        <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t" style={{ borderColor: 'var(--cp-border)' }}></div>
-          <span className="flex-shrink mx-4 text-[11px] font-medium tracking-[-0.01em]" style={{ color: 'var(--cp-text-muted)' }}>Or sign in</span>
-          <div className="flex-grow border-t" style={{ borderColor: 'var(--cp-border)' }}></div>
-        </div>
 
         
         {error && (

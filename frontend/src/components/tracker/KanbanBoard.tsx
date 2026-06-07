@@ -31,6 +31,8 @@ export function KanbanBoard() {
   const [newLocation, setNewLocation] = useState('');
   const [newJobUrl, setNewJobUrl] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [newInterviewDate, setNewInterviewDate] = useState('');
+  const [newStatus, setNewStatus] = useState<KanbanColumnId>('applied');
 
   const handleAdd = () => {
     if (!newRole.trim() || !newCompany.trim()) return;
@@ -40,7 +42,8 @@ export function KanbanBoard() {
       location: newLocation,
       jobUrl: newJobUrl,
       notes: newNotes,
-      columnId: 'applied',
+      interviewDate: newInterviewDate ? new Date(newInterviewDate).toISOString() : undefined,
+      columnId: newStatus,
       appliedAt: new Date().toISOString()
     });
     setNewRole('');
@@ -48,6 +51,8 @@ export function KanbanBoard() {
     setNewLocation('');
     setNewJobUrl('');
     setNewNotes('');
+    setNewInterviewDate('');
+    setNewStatus('applied');
     setShowAddForm(false);
   };
 
@@ -57,7 +62,11 @@ export function KanbanBoard() {
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -105,14 +114,25 @@ export function KanbanBoard() {
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory h-full custom-scrollbar">
+    <div className="flex flex-col h-full gap-4 relative">
+      <div className="flex justify-end pr-2">
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="px-4 py-2 rounded-lg text-xs font-bold transition-transform hover:scale-105 active:scale-95"
+          style={{ background: 'var(--cp-accent)', color: 'var(--cp-bg)' }}
+        >
+          + Add Application
+        </button>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory h-full custom-scrollbar">
         {columns.map((column) => (
           <div key={column.id} className="flex flex-col flex-1 min-w-[220px] max-w-[300px] flex-shrink-0 snap-start">
             <div className="flex items-center justify-between mb-3 px-1">
@@ -121,10 +141,10 @@ export function KanbanBoard() {
                   className="w-2 h-2 rounded-full"
                   style={{
                     background:
-                      column.id === 'applied'      ? '#8888a8'   :
-                      column.id === 'interviewing' ? '#c8a96e' :
-                      column.id === 'offer'        ? '#4ade80'     :
-                      '#9a7a7a'
+                      column.id === 'applied'      ? '#3b82f6'   :
+                      column.id === 'interviewing' ? '#eab308' :
+                      column.id === 'offer'        ? '#22c55e'     :
+                      '#ef4444'
                   }}
                 />
                 {column.label}
@@ -143,7 +163,7 @@ export function KanbanBoard() {
 
             <div
               id={column.id}
-              className="flex-1 rounded-[10px] p-3 flex flex-col gap-2.5 min-h-[200px]"
+              className="flex-1 rounded-[10px] p-3 flex flex-col gap-2.5 min-h-[200px] overflow-y-auto custom-scrollbar"
               style={{ background: 'var(--cp-surface)', border: '0.5px solid var(--cp-border)' }}
             >
               <SortableContext
@@ -166,96 +186,6 @@ export function KanbanBoard() {
                 ))}
               </SortableContext>
 
-              {column.id === 'applied' && !showAddForm && (
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="mt-1 w-full py-2 rounded-[8px] text-xs font-semibold transition-all hover:bg-[var(--cp-accent-dim)]"
-                  style={{
-                    border: '0.5px solid var(--cp-accent-glow)',
-                    color: 'var(--cp-accent)',
-                  }}
-                >
-                  Add application
-                </button>
-              )}
-              {column.id === 'applied' && showAddForm && (
-                <div
-                  className="rounded-[8px] p-3 mt-1 space-y-2"
-                  style={{ background: 'var(--cp-card)', border: '0.5px solid var(--cp-border)' }}
-                >
-                  <input
-                    autoFocus
-                    placeholder="Job title"
-                    value={newRole}
-                    onChange={e => setNewRole(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="w-full bg-transparent text-sm outline-none pb-1 transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--cp-border)',
-                      color: 'var(--cp-text-primary)',
-                    }}
-                  />
-                  <input
-                    placeholder="Company"
-                    value={newCompany}
-                    onChange={e => setNewCompany(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="w-full bg-transparent text-sm outline-none pb-1 mt-2 transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--cp-border)',
-                      color: 'var(--cp-text-primary)',
-                    }}
-                  />
-                  <input
-                    placeholder="Location (Optional)"
-                    value={newLocation}
-                    onChange={e => setNewLocation(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--cp-border)',
-                      color: 'var(--cp-text-primary)',
-                    }}
-                  />
-                  <input
-                    placeholder="Job URL (Optional)"
-                    value={newJobUrl}
-                    onChange={e => setNewJobUrl(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--cp-border)',
-                      color: 'var(--cp-text-primary)',
-                    }}
-                  />
-                  <textarea
-                    placeholder="Notes (Optional)"
-                    value={newNotes}
-                    onChange={e => setNewNotes(e.target.value)}
-                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 resize-none h-12 transition-colors custom-scrollbar"
-                    style={{
-                      borderBottom: '1px solid var(--cp-border)',
-                      color: 'var(--cp-text-primary)',
-                    }}
-                  />
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={handleAdd}
-                      className="text-xs font-semibold hover:underline"
-                      style={{ color: 'var(--cp-accent)' }}
-                    >
-                      Add
-                    </button>
-                    <button
-                      onClick={() => setShowAddForm(false)}
-                      className="text-xs transition-colors"
-                      style={{ color: 'var(--cp-text-muted)' }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -265,5 +195,136 @@ export function KanbanBoard() {
         {activeCard ? <KanbanCard card={activeCard} /> : null}
       </DragOverlay>
     </DndContext>
+
+    {showAddForm && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div 
+          className="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
+          style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}
+        >
+          <h2 className="text-lg font-bold" style={{ color: 'var(--cp-text-primary)' }}>New Application</h2>
+          
+          <div className="flex flex-col gap-3">
+            <select
+              value={newStatus}
+              onChange={e => setNewStatus(e.target.value as KanbanColumnId)}
+              className="w-full p-2.5 rounded-lg text-sm font-medium outline-none transition-all appearance-none cursor-pointer"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            >
+              <option value="applied">Applied</option>
+              <option value="interviewing">Interviewing</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <input
+              autoFocus
+              placeholder="Job title"
+              value={newRole}
+              onChange={e => setNewRole(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full p-2.5 rounded-lg text-sm outline-none transition-all"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            />
+            
+            <input
+              placeholder="Company"
+              value={newCompany}
+              onChange={e => setNewCompany(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full p-2.5 rounded-lg text-sm outline-none transition-all"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            />
+            
+            <input
+              placeholder="Location (Optional)"
+              value={newLocation}
+              onChange={e => setNewLocation(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full p-2.5 rounded-lg text-xs outline-none transition-all"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            />
+            
+            <input
+              placeholder="Job URL (Optional)"
+              value={newJobUrl}
+              onChange={e => setNewJobUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full p-2.5 rounded-lg text-xs outline-none transition-all"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            />
+            
+            {newStatus === 'interviewing' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold" style={{ color: 'var(--cp-text-muted)' }}>Interview Date (Optional)</label>
+                <input
+                  type="datetime-local"
+                  value={newInterviewDate}
+                  onChange={e => setNewInterviewDate(e.target.value)}
+                  className="w-full p-2.5 rounded-lg text-xs outline-none transition-all"
+                  style={{
+                    background: 'var(--cp-surface)',
+                    border: '1px solid var(--cp-border)',
+                    color: 'var(--cp-text-primary)',
+                    colorScheme: 'dark',
+                  }}
+                />
+              </div>
+            )}
+            
+            <textarea
+              placeholder="Notes (Optional)"
+              value={newNotes}
+              onChange={e => setNewNotes(e.target.value)}
+              className="w-full p-2.5 rounded-lg text-xs outline-none resize-none h-20 transition-all custom-scrollbar"
+              style={{
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-primary)',
+              }}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setShowAddForm(false)}
+              className="px-4 py-2 rounded-lg text-xs font-semibold transition-colors"
+              style={{ color: 'var(--cp-text-muted)', background: 'var(--cp-surface)' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAdd}
+              disabled={!newRole.trim() || !newCompany.trim()}
+              className="px-5 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+              style={{ background: 'var(--cp-accent)', color: 'var(--cp-bg)' }}
+            >
+              Save Application
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </div>
   );
 }

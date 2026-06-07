@@ -13,14 +13,18 @@ export function getAuthToken() {
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  if (!authToken) {
-    console.warn('fetchWithAuth called without authToken. Calling initAuth...');
-    await initAuth();
+  let currentToken = authToken;
+  if (!currentToken) {
+    try {
+      const { useAppStore } = await import('../store/useAppStore');
+      currentToken = useAppStore.getState().token;
+      if (currentToken) authToken = currentToken;
+    } catch (e) {}
   }
 
   const headers = {
     'Content-Type': 'application/json',
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
     ...options.headers,
   };
 
@@ -28,6 +32,13 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     ...options,
     headers,
   });
+
+  if (response.status === 401) {
+    import('../store/useAppStore').then(({ useAppStore }) => {
+      useAppStore.getState().logout();
+    });
+    throw new Error('Session expired. Please log in again.');
+  }
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
@@ -50,12 +61,9 @@ export async function initAuth(): Promise<void> {
     if (response.ok) {
       const data = await response.json();
       setAuthToken(data.access_token);
-      console.log('Demo user authenticated successfully');
-    } else {
-      console.error('Failed to auto-login demo user');
     }
   } catch (error) {
-    console.warn('Backend not reachable during initAuth (expected if backend is not running).');
+    // Backend not reachable
   }
 }
 
@@ -90,7 +98,6 @@ export const authService = {
   },
   getProfile: async () => {
     const response = await fetchWithAuth('/profile');
-    if (!response.ok) throw new Error('Failed to get profile');
     return await response.json();
   },
   updateProfile: async (data: any) => {
@@ -98,7 +105,6 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error('Failed to update profile');
     return await response.json();
   },
   changePassword: async (current_password: string, new_password: string) => {
@@ -106,7 +112,6 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({ current_password, new_password })
     });
-    if (!response.ok) throw new Error('Failed to change password');
     return await response.json();
   },
   deleteAccount: async (password: string) => {
@@ -114,7 +119,6 @@ export const authService = {
       method: 'DELETE',
       body: JSON.stringify({ password })
     });
-    if (!response.ok) throw new Error('Failed to delete account');
     return await response.json();
   }
 };
@@ -136,24 +140,25 @@ export async function searchJobs(query: string, filters: JobFilters): Promise<Jo
   const data = await response.json();
   const backendJobs = data.jobs || [];
 
-  return backendJobs.map((j: any, index: number) => ({
-    id: j.id ? `${j.id}-${index}` : String(Math.random()), 
-    role: j.title || j.role || 'Unknown Role',
-    company: j.company || 'Unknown Company',
-    location: j.location || 'Remote',
-    salaryRange: j.salary,
-    fitScore: j.fit_score || Math.floor(Math.random() * 40) + 30, // Fallback if no CV uploaded
-    fitReason: j.reasoning || "Upload a CV to see why you fit this role.",
-    tags: j.matched_skills || [], // Use matched_skills from backend fit score as tags
-    postedAt: j.date_posted || new Date().toISOString(),
-    applyUrl: j.url || j.apply_url || '#',
-    isNew: true
+  return backendJobs.map((j: any) => ({
+    id: String(j.id), 
+    role: j.title || j.role || '',
+    company: j.company || '',
+    location: j.location || '',
+    salaryRange: j.salary || '',
+    fitScore: j.fit_score || 0,
+    fitReason: j.reasoning || '',
+    tags: j.matched_skills || [],
+    postedAt: j.date_posted || '',
+    applyUrl: j.url || j.apply_url || '',
+    isNew: false
   }));
 }
 
 export async function sendChatMessage(
   messages: Message[],
   userMessage: string,
+  sessionId: string,
   jobTitle?: string,
   jobCompany?: string
 ): Promise<string> {
@@ -161,7 +166,7 @@ export async function sendChatMessage(
     method: 'POST',
     body: JSON.stringify({
       message: userMessage,
-      session_id: 'default_demo_session', // In a real app, generate/store this per conversation
+      session_id: sessionId,
       job_title: jobTitle ? `${jobTitle} at ${jobCompany || 'Unknown'}` : undefined
     })
   });
@@ -169,7 +174,7 @@ export async function sendChatMessage(
   return data.reply;
 }
 
-export async function clearChatSession(sessionId: string = 'default_demo_session'): Promise<void> {
+export async function clearChatSession(sessionId: string): Promise<void> {
   await fetchWithAuth(`/assistant/session/${sessionId}`, {
     method: 'DELETE'
   });
@@ -178,10 +183,6 @@ export async function clearChatSession(sessionId: string = 'default_demo_session
 export async function uploadCV(file: File): Promise<{ sections: CVSection[]; skills: string[] }> {
   const formData = new FormData();
   formData.append('file', file);
-
-  if (!authToken) {
-    await initAuth();
-  }
 
   const response = await fetch(`${API_BASE_URL}/cv/upload`, {
     method: 'POST',
@@ -230,16 +231,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const data = await response.json();
 
   return {
-    streak: data.streak_counter || 0,
-    applicationsThisWeek: data.this_week || 0,
-    skillsAdded: data.skills_extracted || 0,
-    roadmapPercent: data.roadmap_progress_percent || 0,
-    weeklyActivity: [0, 0, 0, Math.floor((data.this_week || 0) / 2), 0, data.this_week || 0, 0], // Stubbing activity array for now
-    nudge: typeof data.nudge === 'string' ? { 
-      message: data.nudge, 
-      link_text: "View matching jobs", 
-      link_href: "/jobs" 
-    } : (data.nudge || null),
+    ...data,
+    // Ensure numeric defaults for all stats fields in case backend omits them
+    streak_counter: data.streak_counter ?? 0,
+    this_week: data.this_week ?? 0,
+    skills_added: data.skills_added ?? 0,
+    roadmap_progress_percent: data.roadmap_progress_percent ?? 0,
+    roadmap_percent: data.roadmap_percent ?? 0,
+    weekly_activity: data.weekly_activity ?? [],
+    active_goals: data.active_goals ?? [],
+    due_this_week: data.due_this_week ?? [],
+    nudge: data.nudge ?? null,
   };
 }
 
@@ -255,6 +257,7 @@ export async function getApplications(): Promise<ApplicationCard[]> {
     jobUrl: a.job_url,
     appliedAt: a.applied_at || new Date().toISOString(),
     notes: a.notes,
+    interviewDate: a.interview_date,
     columnId: a.status as 'applied' | 'interviewing' | 'offer' | 'rejected'
   }));
 }
@@ -268,7 +271,8 @@ export async function createApplication(card: Omit<ApplicationCard, 'id'>): Prom
       location: card.location || 'Remote',
       job_url: card.jobUrl || '',
       status: card.columnId,
-      notes: card.notes || ''
+      notes: card.notes || '',
+      interview_date: card.interviewDate || null
     })
   });
   const data = await response.json();

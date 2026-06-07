@@ -1,17 +1,45 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Terminal, Flame } from 'lucide-react';
+import { Terminal, Flame, Bell, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store/useAppStore';
-import { MOCK_STATS } from '@/lib/utils/mockData';
+import { useDashboardStore } from '@/lib/store/useDashboardStore';
+import { useTrackerStore } from '@/lib/store/useTrackerStore';
+import { useJobStore } from '@/lib/store/useJobStore';
 
 export function StatusHood() {
   const { cvUploaded, initStore } = useAppStore();
-  const streak = MOCK_STATS.streak;
+  const { stats, loadData: loadDash } = useDashboardStore();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  
+  const streak = stats?.streak_counter || 0;
+
+  const router = useRouter();
 
   useEffect(() => {
-    initStore();
-  }, [initStore]);
+    initStore().then(() => {
+      if (!useAppStore.getState().isAuthenticated) {
+        router.push('/');
+      }
+    });
+    loadDash();
+  }, [initStore, loadDash, router]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        initStore(),
+        useDashboardStore.getState().loadData(true),
+        useTrackerStore.getState().loadData(true),
+        useJobStore.getState().searchJobs(true)
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div
@@ -62,50 +90,43 @@ export function StatusHood() {
         </span>
       </div>
 
-      
-      <div className="flex items-center gap-2 sm:gap-2.5">
+      <div className="flex items-center gap-3 sm:gap-4">
         
         <div
-          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] sm:text-xs font-bold transition-all duration-300 hover:scale-105 cursor-default"
           style={{
-            background: 'var(--cp-accent-dim)',
-            border: cvUploaded
-              ? '1px solid var(--cp-accent)'
-              : '1px solid var(--cp-danger)',
+            color: 'var(--cp-text-primary)',
+            background: 'var(--cp-surface)',
+            border: '1px solid var(--cp-border)'
           }}
+          title="Current Streak"
         >
-          <Terminal className="w-3.5 h-3.5 hidden sm:block" style={{ color: 'var(--cp-text-muted)' }} />
-          <span className="text-[10px] font-mono hidden sm:block" style={{ color: 'var(--cp-text-muted)' }}>RAG:</span>
-          <span
-            className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${!cvUploaded ? 'rag-dot' : ''}`}
-            style={{
-              backgroundColor: cvUploaded ? 'var(--cp-accent)' : 'var(--cp-danger)',
-              boxShadow: cvUploaded ? '0 0 6px var(--cp-accent)' : 'none',
-            }}
-          />
-          <span
-            className="text-[10px] sm:text-xs font-bold font-mono tracking-wider"
-            style={{ color: cvUploaded ? 'var(--cp-accent)' : 'var(--cp-danger)' }}
-          >
-            {cvUploaded ? 'Grounded' : 'No context'}
-          </span>
+          <span style={{ color: 'var(--cp-gold)' }}>🔥</span>
+          <span>{streak}</span>
         </div>
 
-        
-        <div
-          className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full font-mono text-[10px] sm:text-xs font-bold transition-all duration-300 hover:scale-105 cursor-default"
-          style={{
-            color: 'var(--cp-gold)',
-            boxShadow: '0 0 12px rgba(200,169,110,0.20)',
-          }}
+        <button
+          onClick={handleRefresh}
+          className="relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-[var(--cp-surface)]"
+          style={{ color: 'var(--cp-text-muted)' }}
+          title="Refresh Data"
         >
-          <Flame size={16} strokeWidth={1.5} style={{ color: 'var(--cp-gold)' }} />
-          <span>
-            <span className="hidden sm:inline">Streak: </span>
-            {streak}
-            <span className="hidden sm:inline"> days</span>
-          </span>
-        </div>
+          <RefreshCw size={16} strokeWidth={1.5} className={isRefreshing ? 'animate-spin' : ''} />
+        </button>
+
+        <Link
+          href="/dashboard?tab=overview"
+          className="relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-[var(--cp-surface)]"
+          style={{ color: 'var(--cp-text-muted)' }}
+        >
+          <Bell size={16} strokeWidth={1.5} />
+          {stats?.nudge && (
+            <span 
+              className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+              style={{ background: 'var(--cp-accent)', boxShadow: '0 0 6px var(--cp-accent)' }}
+            />
+          )}
+        </Link>
       </div>
     </div>
   );

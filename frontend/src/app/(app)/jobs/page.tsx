@@ -3,7 +3,7 @@
 import React, { useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
-import { SearchX } from 'lucide-react';
+import { SearchX, Bot } from 'lucide-react';
 import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobCard } from '@/components/jobs/JobCard';
 import { SearchLoading } from '@/components/jobs/SearchLoading';
@@ -37,14 +37,35 @@ function JobsContent() {
             <SearchLoading />
           ) : (
             <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
-              {jobs.length === 0 && query ? (
-                <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
-                  <SearchX size={24} strokeWidth={1.5} className="text-muted" />
-                  <p className="text-sm font-semibold text-primary">No matches found</p>
-                  <p className="text-xs text-muted max-w-xs">
-                    Try removing location constraints or using a different role title.
-                  </p>
-                </div>
+              {jobs.length === 0 ? (
+                query ? (
+                  <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
+                    <SearchX size={24} strokeWidth={1.5} className="text-muted" />
+                    <p className="text-sm font-semibold text-primary">No matches found</p>
+                    <p className="text-xs text-muted max-w-xs">
+                      Try removing location constraints or using a different role title.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 gap-4 text-center mt-4">
+                    <div 
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center" 
+                      style={{ 
+                        background: 'var(--cp-surface)', 
+                        color: 'var(--cp-accent)',
+                        border: '1px solid var(--cp-border)'
+                      }}
+                    >
+                      <Bot size={28} strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold tracking-wide" style={{ color: 'var(--cp-text-primary)' }}>Your AI Job Hunter is Ready</p>
+                      <p className="text-xs mt-2 max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--cp-text-secondary)' }}>
+                        Enter a role or keyword above to initiate the hunt. The agent will fetch live openings and score them instantly against your profile.
+                      </p>
+                    </div>
+                  </div>
+                )
               ) : (
                 jobs.map((job) => (
                   <JobCard key={job.id} job={job} />

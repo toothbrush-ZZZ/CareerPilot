@@ -84,7 +84,7 @@ export function JobCard({ job }: JobCardProps) {
             )}
             <div className="flex items-center gap-1.5">
               <Calendar size={16} strokeWidth={1.5} style={{ color: 'var(--cp-text-muted)' }} />
-              {job.deadline || 'Rolling'}
+              {job.postedAt ? `Posted ${job.postedAt}` : 'Rolling'}
             </div>
             <a
               href={job.applyUrl}
@@ -147,7 +147,7 @@ export function JobCard({ job }: JobCardProps) {
               </p>
               <div className="mt-4 flex gap-2 justify-end">
                 <Link
-                  href={`/assistant?job=${encodeURIComponent(job.role)}&company=${encodeURIComponent(job.company)}`}
+                  href={`/assistant?job=${encodeURIComponent(job.role)}&company=${encodeURIComponent(job.company)}&action=ask`}
                   onClick={(e) => e.stopPropagation()}
                   className="px-3 py-1.5 rounded-[8px] flex items-center gap-1.5 text-[11px] font-medium transition-colors"
                   style={{ background: 'var(--cp-surface)', border: '0.5px solid var(--cp-border)', color: 'var(--cp-text-primary)' }}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { User as UserIcon } from 'lucide-react';
 import { authService } from '@/lib/utils/api';
+import { useAppStore } from '@/lib/store/useAppStore';
 
 export function ProfileForm() {
   const [formData, setFormData] = useState({
@@ -41,6 +42,10 @@ export function ProfileForm() {
     setMessage('');
     try {
       await authService.updateProfile(formData);
+      const currentUser = useAppStore.getState().user;
+      if (currentUser) {
+        useAppStore.getState().setUser({ ...currentUser, name: formData.full_name });
+      }
       setMessage('Profile updated');
       setIsSuccess(true);
     } catch (err) {

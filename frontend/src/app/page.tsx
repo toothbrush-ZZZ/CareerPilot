@@ -15,43 +15,19 @@ export default function LandingPage() {
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
-
-  const handleLaunchDemo = async () => {
-    setIsLoading(true);
-    try {
-      const demoEmail = 'demo@careerpilot.ai';
-      const demoPassword = 'demopassword';
-
-      try {
-        const authData = await authService.login(demoEmail, demoPassword);
-        const profile = await authService.getProfile();
-        login(authData.access_token, profile);
-        router.push('/dashboard');
-        return;
-      } catch (loginErr) {
-        console.warn('Demo login failed, attempting signup', loginErr);
-        await authService.signup(demoEmail, demoPassword, 'Demo User');
-        const authData = await authService.login(demoEmail, demoPassword);
-        const profile = await authService.getProfile();
-        login(authData.access_token, profile);
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      console.error('Demo launch error', err);
-      router.push('/login');
-    } finally {
-      setIsLoading(false);
+    if (isAuthenticated) {
+      router.push('/dashboard');
     }
-  };
+  }, [isAuthenticated, router]);
+
 
   return (
     <div 
-      className="min-h-screen flex flex-col relative overflow-y-auto"
+      className="h-screen w-full flex flex-col relative overflow-y-auto"
       style={{ background: 'var(--cp-bg)', color: 'var(--cp-text-primary)' }}
     >
       <header 
-        className="relative z-10 w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between"
+        className="relative z-10 w-full mx-auto px-6 md:px-12 h-20 flex items-center justify-between"
         style={{ borderBottom: '1px solid var(--cp-border)' }}
       >
         <Link href="/" className="flex items-center gap-3">
@@ -96,7 +72,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="relative z-10 flex-1 max-w-5xl mx-auto px-6 py-16 md:py-24 text-center flex flex-col items-center justify-center">
+      <section className="relative z-10 flex-1 w-full mx-auto px-6 md:px-12 py-16 md:py-24 text-center flex flex-col items-center justify-center">
         <div 
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-medium tracking-[-0.01em] mb-6"
           style={{ background: 'var(--cp-accent-dim)', border: '1px solid var(--cp-border-accent)', color: 'var(--cp-text-primary)' }}
@@ -118,27 +94,17 @@ export default function LandingPage() {
           a dedicated career counselor.
         </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          <button
-            onClick={handleLaunchDemo}
-            disabled={isLoading}
-            className="w-full sm:w-auto flex items-center justify-center gap-2.5 py-3 px-8 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ background: 'var(--cp-text-primary)', color: 'var(--cp-bg)' }}
-          >
-            {isLoading ? 'Bootstrapping Demo...' : 'Instant Demo Preview'}
-            <ArrowRight className="h-4 w-4" />
-          </button>
-
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
           <Link
             href="/login"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 py-3 px-8 rounded-2xl text-sm font-bold transition-all"
-            style={{ background: 'var(--cp-card)', color: 'var(--cp-text-primary)', border: '1px solid var(--cp-border)' }}
+            className="w-full sm:w-auto flex items-center justify-center gap-2.5 py-3 px-8 rounded-2xl text-sm font-bold shadow-lg transition-all"
+            style={{ background: 'var(--cp-text-primary)', color: 'var(--cp-bg)' }}
           >
-            <LogIn className="h-4 w-4" /> Standard Login
+            <LogIn className="h-4 w-4" /> Get Started
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-20 text-left">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mx-auto mt-20 text-left">
           <div 
             className="p-6 rounded-2xl backdrop-blur-sm"
             style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}
@@ -190,7 +156,7 @@ export default function LandingPage() {
       </section>
 
       <footer 
-        className="relative z-10 py-8 text-center text-xs w-full max-w-7xl mx-auto px-6"
+        className="relative z-10 py-8 text-center text-xs w-full mx-auto px-6 md:px-12"
         style={{ color: 'var(--cp-text-muted)', borderTop: '1px solid var(--cp-border)' }}
       >
         CareerPilot SaaS &bull; Dedicated AI Stack 2026.

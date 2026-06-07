@@ -14,22 +14,15 @@ const PROMPTS = [
 
 export function QuickPrompts({ onSelect }: QuickPromptsProps) {
   return (
-    <div className="flex flex-col gap-2.5">
-      <span
-        className="text-[9px] font-bold tracking-widest flex items-center gap-1.5"
-        style={{ color: 'var(--cp-text-muted)' }}
-      >
-        <Sparkles size={16} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
-        Suggested queries
-      </span>
-      <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
         {PROMPTS.map((p, idx) => {
           const Icon = p.Icon;
           return (
             <button
               key={idx}
               onClick={() => onSelect(p.text)}
-              className="text-left px-3 py-2.5 rounded-xl text-sm flex items-center justify-between gap-2 group transition-all"
+              className="text-left px-3 py-2 rounded-full text-[11px] sm:text-xs flex items-center gap-1.5 group transition-all"
               style={{
                 background: 'var(--cp-surface)',
                 border: '1px solid var(--cp-border)',
@@ -48,11 +41,8 @@ export function QuickPrompts({ onSelect }: QuickPromptsProps) {
                 el.style.color = 'var(--cp-text-secondary)';
               }}
             >
-              <span className="flex items-center gap-2 min-w-0">
-                <Icon size={16} strokeWidth={1.5} className="flex-shrink-0" style={{ color: 'var(--cp-accent)', opacity: 0.75 }} />
-                <span className="truncate text-xs leading-snug">{p.text}</span>
-              </span>
-              <ArrowRight size={16} strokeWidth={1.5} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--cp-accent)' }} />
+              <Icon size={14} strokeWidth={1.5} className="flex-shrink-0" style={{ color: 'var(--cp-accent)', opacity: 0.75 }} />
+              <span className="truncate leading-snug font-medium">{p.text}</span>
             </button>
           );
         })}

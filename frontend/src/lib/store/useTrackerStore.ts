@@ -11,6 +11,7 @@ import {
   deleteGoal
 } from '../utils/api';
 import { useAppStore } from './useAppStore';
+import { useDashboardStore } from './useDashboardStore';
 
 const INITIAL_COLUMNS: KanbanColumn[] = [
   { id: 'applied', label: 'Applied', cards: [] },
@@ -23,7 +24,7 @@ interface TrackerState {
   columns: KanbanColumn[];
   goals: Goal[];
   isLoading: boolean;
-  loadData: () => Promise<void>;
+  loadData: (force?: boolean) => Promise<void>;
   moveCard: (cardId: string, toColumn: KanbanColumnId) => void;
   addCard: (card: Omit<ApplicationCard, 'id'>) => Promise<void>;
   removeCard: (id: string) => Promise<void>;
@@ -32,13 +33,19 @@ interface TrackerState {
   removeGoal: (id: string) => Promise<void>;
 }
 
-export const useTrackerStore = create<TrackerState>((set) => ({
+export const useTrackerStore = create<TrackerState>((set, get) => ({
   columns: INITIAL_COLUMNS,
   goals: [],
   isLoading: false,
 
-  loadData: async () => {
-    set({ isLoading: true });
+  loadData: async (force = false) => {
+    const state = get();
+    const hasData = state.columns.some(col => col.cards.length > 0) || state.goals.length > 0;
+    
+    // Only show the full-screen loader if we have NO data
+    if (!hasData) {
+      set({ isLoading: true });
+    }
     try {
       const [apps, goals] = await Promise.all([getApplications(), getGoals()]);
       
@@ -84,6 +91,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
 
     try {
       await updateApplicationStatus(cardId, toColumnId);
+      useDashboardStore.getState().loadData(true);
     } catch (e) {
       console.warn('Failed to update application status (backend might be offline).');
       useAppStore.getState().addToast({ message: 'Failed to save application status', type: 'error' });
@@ -103,6 +111,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
         });
         return { columns: newColumns };
       });
+      useDashboardStore.getState().loadData(true);
     } catch {
       useAppStore.getState().addToast({ message: 'Failed to create application', type: 'error' });
     }
@@ -113,6 +122,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
       const id = await createGoal(goalData);
       const newGoal = { ...goalData, id, current: 0, completed: false, target: 1 } as Goal;
       set((state) => ({ goals: [...state.goals, newGoal] }));
+      useDashboardStore.getState().loadData(true);
     } catch (e) {
       console.warn('Failed to create goal (backend might be offline).');
       useAppStore.getState().addToast({ message: 'Failed to create goal/todo', type: 'error' });
@@ -126,6 +136,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
 
     try {
       await toggleGoalCompletion(id);
+      useDashboardStore.getState().loadData(true);
     } catch {
       set((state) => ({
         goals: state.goals.map(g => g.id === id ? { ...g, completed: !g.completed, current: g.completed ? 0 : 1 } : g)
@@ -141,6 +152,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
     }));
     try {
       await deleteApplication(id);
+      useDashboardStore.getState().loadData(true);
     } catch {
       set({ columns: prevColumns });
       useAppStore.getState().addToast({ message: 'Failed to delete application', type: 'error' });
@@ -152,6 +164,7 @@ export const useTrackerStore = create<TrackerState>((set) => ({
     set((state) => ({ goals: state.goals.filter(g => g.id !== id) }));
     try {
       await deleteGoal(id);
+      useDashboardStore.getState().loadData(true);
     } catch {
       set({ goals: prevGoals });
       useAppStore.getState().addToast({ message: 'Failed to delete goal', type: 'error' });

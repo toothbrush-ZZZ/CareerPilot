@@ -15,7 +15,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: -10 }}
         transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-        className="w-full h-full bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl overflow-y-auto custom-scrollbar"
+        className="w-full h-full bg-[var(--cp-surface)]/60 border border-[var(--cp-border)] backdrop-blur-xl rounded-3xl p-6 shadow-2xl overflow-y-auto custom-scrollbar"
       >
         {children}
       </motion.div>
