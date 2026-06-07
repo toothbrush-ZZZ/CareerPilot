@@ -43,7 +43,7 @@ export function WeeklyActivityChart({ activity }: Props) {
       
       {total === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs" style={{ color: 'var(--cp-text-muted)' }}>No applications logged yet this week</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--cp-text-muted)' }}>No applications logged yet this week</p>
         </div>
       ) : (
         <div className="flex-1 min-h-[120px] w-full mt-2">

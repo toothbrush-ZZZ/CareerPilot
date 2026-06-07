@@ -36,7 +36,7 @@ export function DueThisWeek({ items }: Props) {
 
       {items.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-6">
-          <p className="text-sm font-medium" style={{ color: '#10B981' }}>Clear week ahead ✅</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--cp-text-muted)' }}>No due goals this week</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

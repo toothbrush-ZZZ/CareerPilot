@@ -77,7 +77,7 @@ export default function LandingPage() {
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-medium tracking-[-0.01em] mb-6"
           style={{ background: 'var(--cp-accent-dim)', border: '1px solid var(--cp-border-accent)', color: 'var(--cp-text-primary)' }}
         >
-          <Sparkles className="h-3.5 w-3.5" /> Autonomous AI Career Copilot
+          <Sparkles className="h-3.5 w-3.5" /> AI-Powered Career Copilot
         </div>
 
         <h1 className="font-display font-extrabold text-4xl md:text-6xl tracking-tight leading-[1.1] max-w-3xl">
@@ -89,9 +89,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-base md:text-lg max-w-2xl mt-6 leading-relaxed font-medium" style={{ color: 'var(--cp-text-secondary)' }}>
-          A modern SaaS experience to aggregate real-time job scraping, evaluate
-          resume fit, log application boards, auto-generate cover letters, and chat with
-          a dedicated career counselor.
+          Navigate the job market with real-time opportunities, intelligent insights, and an AI copilot built to help you reach your next destination.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
@@ -100,7 +98,7 @@ export default function LandingPage() {
             className="w-full sm:w-auto flex items-center justify-center gap-2.5 py-3 px-8 rounded-2xl text-sm font-bold shadow-lg transition-all"
             style={{ background: 'var(--cp-text-primary)', color: 'var(--cp-bg)' }}
           >
-            <LogIn className="h-4 w-4" /> Get Started
+            <LogIn className="h-4 w-4" /> Start Your Job Search
           </Link>
         </div>
 
@@ -115,10 +113,9 @@ export default function LandingPage() {
             >
               <Briefcase className="h-5 w-5" />
             </div>
-            <h3 className="font-semibold text-lg mb-2">Live Job Hunting & Scrape</h3>
+            <h3 className="font-semibold text-lg mb-2">Smart Job Hunter</h3>
             <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--cp-text-secondary)' }}>
-              Search real-time listings across global aggregators using keywords. Calculates instantaneous match compatibility scores based on your CV details.
-            </p>
+              Search thousands of live job openings from multiple sources and instantly see how well your profile matches each opportunity.            </p>
           </div>
 
           <div 
@@ -131,9 +128,9 @@ export default function LandingPage() {
             >
               <ClipboardList className="h-5 w-5" />
             </div>
-            <h3 className="font-semibold text-lg mb-2">Kanban Pipeline Tracker</h3>
+            <h3 className="font-semibold text-lg mb-2">Application Tracker</h3>
             <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--cp-text-secondary)' }}>
-              Organize job submissions cleanly inside active application columns (Applied, Interviewing, Offer, Rejected) with notes, metadata, and status toggles.
+              Keep your job search organized with a visual pipeline for applications, interviews, offers, and follow-ups.
             </p>
           </div>
 
@@ -147,10 +144,9 @@ export default function LandingPage() {
             >
               <MessageSquareCode className="h-5 w-5" />
             </div>
-            <h3 className="font-semibold text-lg mb-2">AI Career Assistant Chat</h3>
+            <h3 className="font-semibold text-lg mb-2">AI Career Assistant</h3>
             <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--cp-text-secondary)' }}>
-              Prompt the conversational AI model to answer career milestones, extract skills directly from your resume context, and practice mock interview drills.
-            </p>
+                Get personalized career guidance, resume feedback, interview preparation, and answers tailored to your goals.            </p>
           </div>
         </div>
       </section>

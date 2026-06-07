@@ -83,9 +83,7 @@ export function OverviewStatCards({ stats }: Props) {
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: 'var(--cp-text-muted)' }}>
                 {card.title}
-                {card.title === 'Roadmap Complete' && (
-                  <span className="normal-case text-[9px] font-medium opacity-70">(milestones)</span>
-                )}
+                {card.title === 'Roadmap Complete'}
               </h3>
               {card.icon}
             </div>

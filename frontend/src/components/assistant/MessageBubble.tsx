@@ -38,7 +38,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   border: '1px solid var(--cp-border-accent)',
                 }}
               >
-                AI
+                AI ASSISTANT
               </span>
             </div>
           )}

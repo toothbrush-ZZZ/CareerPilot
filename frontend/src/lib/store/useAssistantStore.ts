@@ -20,7 +20,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I'm your CareerPilot AI. Ask me for resume feedback, interview prep, or job matching.",
+      content: "Ready to take the next step in your career? Ask me for resume feedback, interview practice, application advice, or job search guidance.",
       timestamp: new Date().toISOString()
     }
   ],

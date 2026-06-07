@@ -13,12 +13,12 @@ export default function CVPage() {
       className="p-6 max-w-3xl mx-auto flex flex-col gap-8 h-full overflow-y-auto"
     >
       <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--cp-text-primary)' }}>
-        Resume / CV Management
+        Resume Management
       </h1>
 
       <div className="w-full flex flex-col gap-6">
         <div>
-          <h2 className="text-xs font-semibold tracking-widest mb-4" style={{ color: 'var(--cp-accent)' }}>CV Data Entry</h2>
+          <h2 className="text-xs font-semibold tracking-widest mb-4" style={{ color: 'var(--cp-accent)' }}>Upload an existing resume or create one from scratch.</h2>
           <CVUploader onUploadComplete={() => {}} />
         </div>
       </div>

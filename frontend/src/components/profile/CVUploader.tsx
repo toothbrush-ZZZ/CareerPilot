@@ -157,13 +157,13 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
             onClick={() => setMode('upload')}
             className={`px-4 py-1.5 text-xs font-semibold rounded-sm transition-colors flex items-center gap-2 ${mode === 'upload' ? 'bg-[var(--cp-accent)] text-white' : 'text-[var(--cp-text-muted)] hover:text-[var(--cp-text-primary)]'}`}
           >
-            <UploadCloud size={14} /> Upload File
+            <UploadCloud size={14} /> Upload Resume
           </button>
           <button
             onClick={() => setMode('build')}
             className={`px-4 py-1.5 text-xs font-semibold rounded-sm transition-colors flex items-center gap-2 ${mode === 'build' ? 'bg-[var(--cp-accent)] text-white' : 'text-[var(--cp-text-muted)] hover:text-[var(--cp-text-primary)]'}`}
           >
-            <Edit3 size={14} /> Build CV
+            <Edit3 size={14} /> Create Resume
           </button>
         </div>
       )}
@@ -176,7 +176,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
             <textarea 
               value={buildData.summary}
               onChange={e => setBuildData(prev => ({...prev, summary: e.target.value}))}
-              placeholder="A brief summary of your professional background"
+              placeholder="Briefly describe your background, experience, and career goals."
               className="bg-[var(--cp-bg)] border border-[var(--cp-border)] rounded-md p-2 text-sm outline-none focus:border-[var(--cp-accent)] resize-none h-16"
             />
           </div>
@@ -186,7 +186,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
               {experiences.map((exp, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md bg-[var(--cp-bg)] border border-[var(--cp-border)] relative group">
                   <input
-                    placeholder="Role (e.g. Software Engineer)"
+                    placeholder="Role"
                     value={exp.role}
                     onChange={(e) => {
                       const newExp = [...experiences];
@@ -197,7 +197,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                   />
                   <div className="hidden sm:block w-px h-4 bg-[var(--cp-border)]" />
                   <input
-                    placeholder="Company (e.g. Google)"
+                    placeholder="Company"
                     value={exp.company}
                     onChange={(e) => {
                       const newExp = [...experiences];
@@ -332,7 +332,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
             <input 
               value={buildData.education}
               onChange={e => setBuildData(prev => ({...prev, education: e.target.value}))}
-              placeholder="e.g. BS Computer Science, MIT"
+              placeholder="e.g. B.Sc. in Software Engineering, IUT"
               className="bg-[var(--cp-bg)] border border-[var(--cp-border)] rounded-md p-2 text-sm outline-none focus:border-[var(--cp-accent)]"
             />
           </div>
@@ -340,7 +340,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
             onClick={handleBuildSubmit}
             className="mt-2 bg-[var(--cp-accent)] text-white px-4 py-2 rounded-md text-xs font-semibold"
           >
-            Generate & Index CV
+            Generate Resume Profile
           </button>
         </div>
       ) : (

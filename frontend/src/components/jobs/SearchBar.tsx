@@ -83,7 +83,7 @@ export function SearchBar() {
           onChange={(e) => setLocalQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Find me ML internships in Dhaka…"
+          placeholder="Discover your next career opportunity…"
           className="w-full rounded-xl pl-12 pr-28 py-3.5 text-base outline-none transition-all bg-[var(--cp-card)] text-[var(--cp-text-primary)]"
           style={{
             border: `1.5px solid ${focused ? 'var(--cp-accent)' : 'var(--cp-border)'}`,
