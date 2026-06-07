@@ -78,9 +78,9 @@ async def chat(
         )
         return response.text
     except Exception as e:
-        logger.warning(f"[LLM] Gemini 2.0 Flash failed: {e}. Falling back to Gemini 1.5 Flash.")
+        logger.warning(f"[LLM] Gemini 2.0 Flash failed: {e}. Falling back to Gemini 2.0 Flash Lite.")
         response = await _gemini_client.aio.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash-lite',
             contents=contents,
             config=config
         )

@@ -18,7 +18,7 @@ export function SearchBar() {
     const saved = localStorage.getItem(getStorageKey());
     if (saved) {
       try {
-        setRecentSearches(JSON.parse(saved));
+        setRecentSearches(JSON.parse(saved).slice(0, 3));
       } catch {}
     } else {
       setRecentSearches([]);
@@ -27,7 +27,7 @@ export function SearchBar() {
 
   const saveRecentSearch = (search: string) => {
     if (!search.trim()) return;
-    const updated = [search, ...recentSearches.filter(s => s !== search)].slice(0, 5);
+    const updated = [search, ...recentSearches.filter(s => s !== search)].slice(0, 3);
     setRecentSearches(updated);
     localStorage.setItem(getStorageKey(), JSON.stringify(updated));
   };

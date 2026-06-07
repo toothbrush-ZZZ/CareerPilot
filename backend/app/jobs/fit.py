@@ -29,12 +29,16 @@ Respond ONLY with valid JSON, no markdown fences, no preamble:
   "reasoning": "<2 sentences explaining the match based on skills>"
 }}"""
 
-    raw_response = await chat(
-        messages=[{"role": "user", "content": prompt}],
-        json_mode=True,
-        max_tokens=400,
-        temperature=0.2,
-    )
+    try:
+        raw_response = await chat(
+            messages=[{"role": "user", "content": prompt}],
+            json_mode=True,
+            max_tokens=400,
+            temperature=0.2,
+        )
+    except Exception as e:
+        print(f"[fit] LLM error during compute_fit: {e}")
+        raw_response = '{"matched_skills": [], "missing_skills": [], "reasoning": "Fit analysis currently unavailable due to AI rate limits."}'
 
     raw = re.sub(r"```json|```", "", raw_response).strip()
 

@@ -29,16 +29,26 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
                         results_wanted=limit,
                         is_remote=is_remote
                     )
-                raise e
-
-        df_local = _try_scrape(["indeed", "linkedin", "glassdoor"], False)
-        df_remote = _try_scrape(["indeed", "linkedin", "glassdoor"], True)
+        df_local = _try_scrape(["indeed", "linkedin"], False)
+        df_remote = _try_scrape(["indeed", "linkedin"], True)
         
+        df_gd_local = None
+        df_gd_remote = None
+        try:
+            df_gd_local = _try_scrape(["glassdoor"], False)
+            df_gd_remote = _try_scrape(["glassdoor"], True)
+        except Exception as e:
+            print(f"[scraper] Glassdoor failed independently: {e}")
+            
         dfs = []
         if df_local is not None and not df_local.empty:
             dfs.append(df_local)
         if df_remote is not None and not df_remote.empty:
             dfs.append(df_remote)
+        if df_gd_local is not None and not df_gd_local.empty:
+            dfs.append(df_gd_local)
+        if df_gd_remote is not None and not df_gd_remote.empty:
+            dfs.append(df_gd_remote)
             
         if not dfs:
             return []
@@ -113,6 +123,10 @@ Respond ONLY with a JSON object in this format (no other text, no markdown block
         }
     except Exception as e:
         print(f"[scraper] failed to parse natural query: {e}")
+        import re
+        match = re.search(r'^(.*?)\s+in\s+(.*)$', nl_query, re.IGNORECASE)
+        if match:
+            return {"query": match.group(1).strip(), "location": match.group(2).strip()}
         return {"query": nl_query, "location": "Bangladesh"}
 
 

@@ -41,9 +41,9 @@ function JobsContent() {
                 query ? (
                   <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
                     <SearchX size={24} strokeWidth={1.5} className="text-muted" />
-                    <p className="text-sm font-semibold text-primary">No matches found</p>
-                    <p className="text-xs text-muted max-w-xs">
-                      Try removing location constraints or using a different role title.
+                    <p className="text-sm font-semibold text-primary">No jobs found</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px] mt-1">
+                      Try tweaking your search keywords, using a broader title, or expanding the location.
                     </p>
                   </div>
                 ) : (
