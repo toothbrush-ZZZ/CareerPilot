@@ -29,16 +29,23 @@ def _scrape_sync(query: str, location: str, limit: int) -> List[dict]:
                         results_wanted=limit,
                         is_remote=is_remote
                     )
-        df_local = _try_scrape(["indeed", "linkedin"], False)
-        df_remote = _try_scrape(["indeed", "linkedin"], True)
-        
-        df_gd_local = None
-        df_gd_remote = None
-        try:
-            df_gd_local = _try_scrape(["glassdoor"], False)
-            df_gd_remote = _try_scrape(["glassdoor"], True)
-        except Exception as e:
-            print(f"[scraper] Glassdoor failed independently: {e}")
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exec:
+            f_local = exec.submit(_try_scrape, ["indeed", "linkedin"], False)
+            f_remote = exec.submit(_try_scrape, ["indeed", "linkedin"], True)
+            f_gd_local = exec.submit(_try_scrape, ["glassdoor"], False)
+            f_gd_remote = exec.submit(_try_scrape, ["glassdoor"], True)
+
+            df_local = f_local.result()
+            df_remote = f_remote.result()
+            
+            df_gd_local = None
+            df_gd_remote = None
+            try:
+                df_gd_local = f_gd_local.result()
+                df_gd_remote = f_gd_remote.result()
+            except Exception as e:
+                print(f"[scraper] Glassdoor failed independently: {e}")
             
         dfs = []
         if df_local is not None and not df_local.empty:

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     GROQ_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
+    OPENROUTER_API_KEY: str | None = None
 
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/careerpilot.db"
 

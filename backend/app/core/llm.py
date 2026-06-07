@@ -4,6 +4,7 @@ from groq import AsyncGroq
 import groq
 from google import genai
 from google.genai import types
+from openai import AsyncOpenAI
 
 from app.core.config import get_settings
 
@@ -16,6 +17,13 @@ _gemini_client = None
 if settings.GEMINI_API_KEY:
     _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
+_openrouter_client = None
+if settings.OPENROUTER_API_KEY:
+    _openrouter_client = AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=settings.OPENROUTER_API_KEY,
+    )
+
 
 async def chat(
     messages: List[Dict[str, str]], 
@@ -23,13 +31,13 @@ async def chat(
     temperature: float = 0.7, 
     json_mode: bool = False
 ) -> str:
-    """Unified chat function with automatic fallback to Gemini Flash."""
-    
+    """Unified chat function with automatic fallback chain: Groq -> Gemini -> OpenRouter."""
+    errors = []
 
     if _groq_client:
         try:
             kwargs = {
-                "model": "llama-3.3-70b-versatile",
+                "model": "llama-3.1-8b-instant",
                 "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
@@ -39,49 +47,66 @@ async def chat(
 
             response = await _groq_client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
-        except (groq.RateLimitError, groq.APIConnectionError, groq.APITimeoutError, groq.InternalServerError) as err:
-            logger.warning(f"[LLM] Groq failed: {err}. Falling back to Gemini Flash.")
-            if not _gemini_client:
-                raise err
-    
+        except Exception as err:
+            logger.warning(f"[LLM] Groq failed: {err}")
+            errors.append(err)
 
-    if not _gemini_client:
-        raise ValueError("Neither Groq nor Gemini API keys are configured correctly.")
+    if _gemini_client:
+        system_instruction = ""
+        contents = []
+        for m in messages:
+            if m["role"] == "system":
+                system_instruction += m["content"] + "\n"
+            else:
+                role = "user" if m["role"] == "user" else "model"
+                contents.append(types.Content(role=role, parts=[types.Part.from_text(text=m["content"])]))
+            
+        config_args = {
+            "max_output_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if system_instruction:
+            config_args["system_instruction"] = system_instruction
+        if json_mode:
+            config_args["response_mime_type"] = "application/json"
+            
+        config = types.GenerateContentConfig(**config_args)
         
+        try:
+            response = await _gemini_client.aio.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=contents,
+                config=config
+            )
+            return response.text
+        except Exception as e:
+            logger.warning(f"[LLM] Gemini 2.0 Flash failed: {e}")
+            errors.append(e)
+            try:
+                response = await _gemini_client.aio.models.generate_content(
+                    model='gemini-2.0-flash-lite',
+                    contents=contents,
+                    config=config
+                )
+                return response.text
+            except Exception as e2:
+                logger.warning(f"[LLM] Gemini 2.0 Flash Lite failed: {e2}")
+                errors.append(e2)
 
-    system_instruction = ""
-    contents = []
-    
-    for m in messages:
-        if m["role"] == "system":
-            system_instruction += m["content"] + "\n"
-        else:
-            role = "user" if m["role"] == "user" else "model"
-            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=m["content"])]))
-        
-    config_args = {
-        "max_output_tokens": max_tokens,
-        "temperature": temperature,
-    }
-    if system_instruction:
-        config_args["system_instruction"] = system_instruction
-    if json_mode:
-        config_args["response_mime_type"] = "application/json"
-        
-    config = types.GenerateContentConfig(**config_args)
-    
-    try:
-        response = await _gemini_client.aio.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=contents,
-            config=config
-        )
-        return response.text
-    except Exception as e:
-        logger.warning(f"[LLM] Gemini 2.0 Flash failed: {e}. Falling back to Gemini 2.0 Flash Lite.")
-        response = await _gemini_client.aio.models.generate_content(
-            model='gemini-2.0-flash-lite',
-            contents=contents,
-            config=config
-        )
-        return response.text
+    if _openrouter_client:
+        try:
+            kwargs = {
+                "model": "meta-llama/llama-3.1-8b-instruct",
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            response = await _openrouter_client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.warning(f"[LLM] OpenRouter failed: {e}")
+            errors.append(e)
+
+    raise ValueError(f"All LLM clients failed or none configured. Errors: {errors}")
