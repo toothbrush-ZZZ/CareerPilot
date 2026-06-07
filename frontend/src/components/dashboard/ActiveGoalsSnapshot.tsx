@@ -38,7 +38,7 @@ export function ActiveGoalsSnapshot({ goals }: Props) {
   return (
     <div className="flex flex-col rounded-xl p-5" style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-bold" style={{ color: 'var(--cp-text-primary)' }}>Goal Progress</h3>
+        <h3 className="section__heading">Goal Progress</h3>
         <button 
           onClick={() => router.push('/dashboard?tab=planner')}
           className="text-xs font-bold hover:underline" 
@@ -73,31 +73,29 @@ export function ActiveGoalsSnapshot({ goals }: Props) {
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="text-sm shrink-0">🎯</span>
-                  <span className="text-xs font-semibold truncate group-hover:underline" style={{ color: 'var(--cp-text-primary)' }}>
+                  <span className="goal-card__title truncate group-hover:underline">
                     {goal.title}
                   </span>
                 </div>
                 
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="flex items-center gap-2 w-32">
-                    <div className="h-1.5 flex-1 rounded-full overflow-hidden" style={{ background: 'var(--cp-surface)' }}>
+                    <div className="goal-card__progress-bar flex-1 overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: isMounted ? `${progressPercent}%` : 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="h-full rounded-full"
-                        style={{ background: 'var(--cp-accent)' }}
+                        className="goal-card__progress-fill h-full"
                       />
                     </div>
-                    <span className="text-[10px] font-bold w-12 text-right whitespace-nowrap" style={{ color: 'var(--cp-text-muted)' }}>
+                    <span className="goal-card__count w-12 text-right whitespace-nowrap">
                       {progressText}
                     </span>
                   </div>
 
                   <div className="w-20 text-right flex items-center justify-end gap-1">
                     <span 
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${overdue ? 'bg-red-500/10' : 'bg-black/5 dark:bg-white/5'}`}
-                      style={{ color: overdue ? '#EF4444' : 'var(--cp-text-secondary)' }}
+                      className={`px-2 py-0.5 rounded-md ${overdue ? 'goal-card__due--overdue bg-red-500/10' : 'goal-card__due bg-black/5 dark:bg-white/5'}`}
                     >
                       Due {getDayName(goal.due_date)}
                     </span>

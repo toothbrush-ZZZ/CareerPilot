@@ -81,17 +81,17 @@ export function OverviewStatCards({ stats }: Props) {
           />
           <div className="pl-2 flex-1 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-2">
-              <h3 className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: 'var(--cp-text-muted)' }}>
+              <h3 className="stat-card__label flex items-center gap-1">
                 {card.title}
                 {card.title === 'Roadmap Complete'}
               </h3>
               {card.icon}
             </div>
             <div>
-              <div className="text-3xl font-bold mb-1" style={{ color: 'var(--cp-text-primary)' }}>
+              <div className={`mb-1 ${card.title === 'Roadmap Complete' ? 'stat-card__number--percentage' : 'stat-card__number'}`}>
                 {card.value}
               </div>
-              <div className="text-xs font-medium" style={{ color: card.trendColor }}>
+              <div className="stat-card__trend" style={{ color: card.trendColor }}>
                 {card.trend}
               </div>
             </div>

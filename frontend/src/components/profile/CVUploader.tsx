@@ -169,10 +169,11 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
       )}
 
       {mode === 'build' && !cvUploaded && !isUploading ? (
-        <div style={dropZoneStyle} className="!items-stretch !justify-start !p-4 gap-3 overflow-y-auto max-h-[500px] custom-scrollbar">
-          <p className="text-sm font-semibold text-center mb-2" style={{ color: 'var(--cp-text-primary)' }}>Build Your CV</p>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] text-[var(--cp-text-secondary)]">Professional Summary</label>
+        <div style={{ ...dropZoneStyle, padding: 0, height: 'auto', minHeight: 'auto', display: 'block' }}>
+          <div className="p-4 flex flex-col gap-4">
+            <p className="text-sm font-semibold text-center mb-2" style={{ color: 'var(--cp-text-primary)' }}>Build Your CV</p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--cp-text-secondary)]">Professional Summary</label>
             <textarea 
               value={buildData.summary}
               onChange={e => setBuildData(prev => ({...prev, summary: e.target.value}))}
@@ -180,8 +181,8 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
               className="bg-[var(--cp-bg)] border border-[var(--cp-border)] rounded-md p-2 text-sm outline-none focus:border-[var(--cp-accent)] resize-none h-16"
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] text-[var(--cp-text-secondary)]">Work Experience</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--cp-text-secondary)]">Work Experience</label>
             <div className="flex flex-col gap-2">
               {experiences.map((exp, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md bg-[var(--cp-bg)] border border-[var(--cp-border)] relative group">
@@ -193,7 +194,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                       newExp[idx].role = e.target.value;
                       setExperiences(newExp);
                     }}
-                    className="bg-transparent text-sm outline-none flex-1 w-full min-w-0"
+                    className="bg-transparent text-sm outline-none flex-[2] w-full min-w-0"
                   />
                   <div className="hidden sm:block w-px h-4 bg-[var(--cp-border)]" />
                   <input
@@ -204,7 +205,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                       newExp[idx].company = e.target.value;
                       setExperiences(newExp);
                     }}
-                    className="bg-transparent text-sm outline-none flex-1 w-full min-w-0"
+                    className="bg-transparent text-sm outline-none flex-[1] w-full min-w-0"
                   />
                   <div className="hidden sm:block w-px h-4 bg-[var(--cp-border)]" />
                   <input
@@ -215,7 +216,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                       newExp[idx].duration = e.target.value;
                       setExperiences(newExp);
                     }}
-                    className="bg-transparent text-sm outline-none w-full sm:w-28 min-w-0 pr-6 sm:pr-0"
+                    className="bg-transparent text-sm outline-none flex-[1.5] w-full min-w-0 pr-6 sm:pr-0"
                   />
                   {experiences.length > 1 && (
                     <button
@@ -240,8 +241,8 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
               </button>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] text-[var(--cp-text-secondary)]">Projects</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--cp-text-secondary)]">Projects</label>
             <div className="flex flex-col gap-2">
               {projects.map((proj, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md bg-[var(--cp-bg)] border border-[var(--cp-border)] relative group">
@@ -289,8 +290,8 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
               </button>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] text-[var(--cp-text-secondary)]">Key Skills</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--cp-text-secondary)]">Key Skills</label>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill, idx) => (
                 <div key={idx} className="flex items-center gap-1 p-1 pl-2 rounded-md bg-[var(--cp-bg)] border border-[var(--cp-border)] group w-24 sm:w-32">
@@ -302,7 +303,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                       newSkills[idx] = e.target.value;
                       setSkills(newSkills);
                     }}
-                    className="bg-transparent text-xs outline-none w-full min-w-0"
+                    className="bg-transparent text-sm outline-none w-full min-w-0"
                   />
                   {skills.length > 1 && (
                     <button
@@ -327,8 +328,8 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
               </button>
             </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] text-[var(--cp-text-secondary)]">Education</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--cp-text-secondary)]">Education</label>
             <input 
               value={buildData.education}
               onChange={e => setBuildData(prev => ({...prev, education: e.target.value}))}
@@ -342,6 +343,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
           >
             Generate Resume Profile
           </button>
+          </div>
         </div>
       ) : (
         <div

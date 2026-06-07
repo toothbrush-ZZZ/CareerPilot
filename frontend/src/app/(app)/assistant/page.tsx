@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChatWindow } from '@/components/assistant/ChatWindow';
 import { useAssistantStore } from '@/lib/store/useAssistantStore';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 function AssistantContent() {
   const { sendMessage } = useAssistantStore();
@@ -15,15 +15,28 @@ function AssistantContent() {
 
   const actionHandled = React.useRef(false);
 
+  const router = useRouter();
+
   React.useEffect(() => {
+    const draftMsg = `Please draft a cover letter for the ${jobTitle} position${jobCompany ? ` at ${jobCompany}` : ''}.`;
+    const askMsg = `I am interested in the ${jobTitle} position${jobCompany ? ` at ${jobCompany}` : ''}. Given my resume, how well do I fit this role and what are my skill gaps?`;
+
     if (action === 'cover_letter' && jobTitle && !actionHandled.current) {
       actionHandled.current = true;
-      sendMessage(`Please draft a cover letter for the ${jobTitle} position${jobCompany ? ` at ${jobCompany}` : ''}.`, jobTitle, jobCompany);
+      const lastUserMsg = useAssistantStore.getState().messages.filter(m => m.role === 'user').pop();
+      if (lastUserMsg?.content !== draftMsg) {
+        sendMessage(draftMsg, jobTitle, jobCompany);
+      }
+      router.replace(`/assistant?job=${encodeURIComponent(jobTitle)}&company=${encodeURIComponent(jobCompany)}`);
     } else if (action === 'ask' && jobTitle && !actionHandled.current) {
       actionHandled.current = true;
-      sendMessage(`I am interested in the ${jobTitle} position${jobCompany ? ` at ${jobCompany}` : ''}. Given my resume, how well do I fit this role and what are my skill gaps?`, jobTitle, jobCompany);
+      const lastUserMsg = useAssistantStore.getState().messages.filter(m => m.role === 'user').pop();
+      if (lastUserMsg?.content !== askMsg) {
+        sendMessage(askMsg, jobTitle, jobCompany);
+      }
+      router.replace(`/assistant?job=${encodeURIComponent(jobTitle)}&company=${encodeURIComponent(jobCompany)}`);
     }
-  }, [action, jobTitle, jobCompany, sendMessage]);
+  }, [action, jobTitle, jobCompany, sendMessage, router]);
 
 
   return (

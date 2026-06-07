@@ -7,17 +7,12 @@ interface Props {
 }
 
 export function DashboardGreeting({ firstName }: Props) {
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
+  const name = firstName && firstName.toLowerCase() !== 'there' ? firstName : '';
+  
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--cp-text-primary)' }}>
-        {getGreeting()}, {firstName} <span className="inline-block origin-bottom-right hover:animate-wave">👋</span>
+      <h1 className="greeting__text">
+        Welcome{name ? `, ${name}` : ''} <span className="inline-block origin-bottom-right hover:animate-wave">👋</span>
       </h1>
     </div>
   );

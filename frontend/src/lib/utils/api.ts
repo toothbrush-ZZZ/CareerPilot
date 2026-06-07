@@ -268,7 +268,7 @@ export async function createApplication(card: Omit<ApplicationCard, 'id'>): Prom
     body: JSON.stringify({
       job_title: card.role,
       company: card.company,
-      location: card.location || 'Remote',
+      location: card.location || '',
       job_url: card.jobUrl || '',
       status: card.columnId,
       notes: card.notes || '',

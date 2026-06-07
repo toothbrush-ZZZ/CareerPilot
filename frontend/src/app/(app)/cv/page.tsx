@@ -10,7 +10,7 @@ export default function CVPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="p-6 max-w-3xl mx-auto flex flex-col gap-8 h-full overflow-y-auto"
+      className="p-6 max-w-3xl mx-auto flex flex-col gap-8 h-full overflow-y-auto custom-scrollbar"
     >
       <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--cp-text-primary)' }}>
         Resume Management

@@ -31,18 +31,18 @@ export function CalendarView() {
     <div className="flex flex-col h-full rounded-xl" style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
       
       <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--cp-border)' }}>
-        <h2 className="text-[10px] font-semibold tracking-widest flex items-center gap-1.5 uppercase" style={{ color: 'var(--cp-text-secondary)' }}>
+        <h2 className="section__heading flex items-center gap-1.5">
           <CalendarIcon size={14} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
           Calendar
         </h2>
         <div className="flex items-center gap-1">
-          <button onClick={prevMonth} className="p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
+          <button onClick={prevMonth} className="calendar__nav-arrow p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors">
             <ChevronLeft size={14} />
           </button>
-          <span className="text-[11px] font-semibold min-w-[70px] text-center" style={{ color: 'var(--cp-text-primary)' }}>
+          <span className="calendar__month-title min-w-[70px] text-center">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </span>
-          <button onClick={nextMonth} className="p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors" style={{ color: 'var(--cp-text-muted)' }}>
+          <button onClick={nextMonth} className="calendar__nav-arrow p-0.5 rounded hover:bg-[var(--cp-surface)] transition-colors">
             <ChevronRight size={14} />
           </button>
         </div>
@@ -53,7 +53,7 @@ export function CalendarView() {
         
         <div className="grid grid-cols-7 gap-1 mb-1">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="text-center text-[9px] font-semibold tracking-wider uppercase" style={{ color: 'var(--cp-text-muted)' }}>
+            <div key={d} className="calendar__weekday text-center">
               {d}
             </div>
           ))}
@@ -78,28 +78,27 @@ export function CalendarView() {
                 className="relative group min-h-[28px] p-1 flex flex-col items-center justify-center cursor-default"
               >
                 <div 
-                  className={`text-[10px] font-semibold w-5 h-5 flex items-center justify-center rounded-full transition-all ${hasGoals ? 'cursor-pointer hover:bg-[var(--cp-surface)]' : ''}`}
-                  style={{ 
-                    color: isToday ? '#000' : (hasIncompleteGoals ? 'var(--cp-accent)' : 'var(--cp-text-secondary)'),
-                    background: isToday ? 'var(--cp-accent)' : 'transparent',
-                    textShadow: hasIncompleteGoals && !isToday ? '0 0 8px var(--cp-accent)' : 'none'
-                  }}
+                  className={`flex flex-col items-center justify-center transition-all ${
+                    isToday ? 'calendar__day--today' : 
+                    hasIncompleteGoals ? 'calendar__day--highlighted' : 
+                    'calendar__day'
+                  } ${hasGoals ? 'cursor-pointer hover:bg-[var(--cp-surface)] calendar__day--has-event' : ''}`}
                 >
                   {day}
                 </div>
                 
                 {hasGoals && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col pb-1.5 z-[100]">
-                    <div className="flex flex-col gap-1 p-2 rounded-md shadow-lg w-max max-w-[150px]"
-                         style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-                      <div className="text-[9px] font-bold text-[var(--cp-text-muted)] mb-0.5 uppercase tracking-wider text-center">
+                    <div className="flex flex-col gap-2 p-4 rounded-xl shadow-xl w-max max-w-[280px]"
+                         style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
+                      <div className="text-sm font-bold text-[var(--cp-text-muted)] mb-1 uppercase tracking-wider text-center">
                         Due on {day}
                       </div>
                       {dayGoals.map(goal => (
                         <div 
                           key={goal.id}
                           onClick={(e) => { e.stopPropagation(); toggleGoal(goal.id); }}
-                          className={`text-[9px] leading-tight px-1.5 py-1 rounded cursor-pointer truncate transition-colors ${
+                          className={`text-sm leading-snug px-3 py-2 rounded cursor-pointer truncate transition-colors ${
                             goal.completed 
                               ? 'bg-[var(--cp-surface)] text-[var(--cp-text-muted)] line-through' 
                               : 'bg-[var(--cp-surface)] text-[var(--cp-text-primary)] hover:bg-[var(--cp-accent)] hover:text-black'

@@ -29,7 +29,7 @@ function JobsContent() {
       className="flex h-full"
     >
       
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
         <SearchBar />
 
         <div className="flex-1">

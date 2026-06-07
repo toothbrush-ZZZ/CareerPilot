@@ -84,7 +84,7 @@ export function SearchBar() {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder="Discover your next career opportunity…"
-          className="w-full rounded-xl pl-12 pr-28 py-3.5 text-base outline-none transition-all bg-[var(--cp-card)] text-[var(--cp-text-primary)]"
+          className="w-full rounded-xl pl-12 pr-28 py-3.5 text-base outline-none transition-all bg-[var(--cp-card)] text-white"
           style={{
             border: `1.5px solid ${focused ? 'var(--cp-accent)' : 'var(--cp-border)'}`,
             boxShadow: '0 2px 8px var(--cp-border)',

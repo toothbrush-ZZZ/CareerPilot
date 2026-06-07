@@ -29,17 +29,13 @@ export function GoalPanel() {
     <div className="flex flex-col gap-3 h-full overflow-hidden">
       
       <div className="flex items-center justify-between shrink-0">
-        <h2
-          className="text-[11px] font-medium tracking-[-0.01em] flex items-center gap-2"
-          style={{ color: 'var(--cp-text-secondary)' }}
-        >
+        <h2 className="section__heading flex items-center gap-2">
           <Target size={20} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
           Active goals
         </h2>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="text-xs font-semibold flex items-center gap-1 transition-colors hover:underline shrink-0"
-          style={{ color: 'var(--cp-accent)' }}
+          className="section__action flex items-center gap-1 transition-colors hover:underline shrink-0"
         >
           <Plus size={16} strokeWidth={1.5} /> Add goal
         </button>
@@ -69,9 +65,9 @@ export function GoalPanel() {
                   : <Circle size={16} strokeWidth={1.5} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--cp-text-muted)' }} />
                 }
                 <span
-                  className="text-sm font-medium leading-snug break-words"
+                  className="goal-card__title break-words"
                   style={{
-                    color: goal.completed ? 'var(--cp-text-muted)' : 'var(--cp-text-primary)',
+                    color: goal.completed ? 'var(--text-muted)' : undefined,
                     textDecoration: goal.completed ? 'line-through' : undefined,
                   }}
                 >
@@ -90,29 +86,19 @@ export function GoalPanel() {
             
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
-                <div
-                  className="min-h-[4px] flex-1 overflow-hidden"
-                  style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}
-                >
+                <div className="goal-card__progress-bar flex-1 overflow-hidden">
                   <div
-                    className="h-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min(100, (goal.current / goal.target) * 100)}%`,
-                      background: 'var(--cp-accent)',
-                      borderRadius: '4px',
-                    }}
+                    className="goal-card__progress-fill h-full"
+                    style={{ width: `${Math.min(100, (goal.current / goal.target) * 100)}%` }}
                   />
                 </div>
-                <span
-                  className="text-[10px] font-mono flex-shrink-0"
-                  style={{ color: 'var(--cp-text-muted)' }}
-                >
+                <span className="goal-card__count flex-shrink-0">
                   {goal.current}/{goal.target}
                 </span>
               </div>
 
               {goal.dueDate && (
-                <span className="text-[10px] font-mono" style={{ color: 'var(--cp-text-muted)' }}>
+                <span className="goal-card__due">
                   Due: {goal.dueDate}
                 </span>
               )}

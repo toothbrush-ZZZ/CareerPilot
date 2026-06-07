@@ -57,10 +57,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
       />
 
       <div className="flex items-start justify-between gap-2 mb-1">
-        <h4
-          className="font-semibold leading-tight text-sm"
-          style={{ color: 'var(--cp-text-primary)' }}
-        >
+        <h4 className="kanban__card-title">
           {card.role}
         </h4>
         <div className="flex items-center gap-1">
@@ -80,7 +77,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
         </div>
       </div>
 
-      <div className="text-[11px] mb-1" style={{ color: 'var(--cp-text-muted)' }}>
+      <div className="kanban__card-company">
         {card.company}
         {card.location && <span className="ml-1 opacity-70">• {card.location}</span>}
       </div>

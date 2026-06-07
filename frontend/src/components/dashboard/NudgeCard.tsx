@@ -61,13 +61,13 @@ export function NudgeCard({ nudge }: Props) {
           {nudge.jobs && nudge.jobs.length > 0 && (
             <ul className="mt-2 flex flex-col gap-1.5 list-disc pl-4">
               {nudge.jobs.map((job) => (
-                <li key={job.job_id} className="text-xs font-medium" style={{ color: 'var(--cp-text-primary)' }}>
+                <li key={job.job_id} className="job-card__title">
                   {job.job_url ? (
                     <a href={job.job_url} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-400">
-                      {job.title} <span style={{ color: 'var(--cp-text-muted)' }}>@ {job.company}</span>
+                      {job.title} <span className="job-card__company">@ {job.company}</span>
                     </a>
                   ) : (
-                    <>{job.title} <span style={{ color: 'var(--cp-text-muted)' }}>@ {job.company}</span></>
+                    <>{job.title} <span className="job-card__company">@ {job.company}</span></>
                   )}
                 </li>
               ))}

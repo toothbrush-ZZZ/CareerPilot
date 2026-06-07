@@ -136,7 +136,7 @@ export function KanbanBoard() {
         {columns.map((column) => (
           <div key={column.id} className="flex flex-col flex-1 min-w-[220px] max-w-[300px] flex-shrink-0 snap-start">
             <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="text-[11px] font-medium tracking-[-0.01em] flex items-center gap-2" style={{ color: 'var(--cp-text-secondary)' }}>
+              <h3 className="kanban__column-title flex items-center gap-2">
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{
@@ -149,14 +149,7 @@ export function KanbanBoard() {
                 />
                 {column.label}
               </h3>
-              <span
-                className="text-[11px] font-medium px-2 py-[1px] rounded-full"
-                style={{
-                  background: 'var(--cp-surface)',
-                  border: '0.5px solid var(--cp-border)',
-                  color: 'var(--cp-text-muted)',
-                }}
-              >
+              <span className="kanban__column-count">
                 {column.cards.length}
               </span>
             </div>

@@ -95,8 +95,7 @@ export function CommandDock() {
                   )}
                 </div>
                 <span
-                  className="text-[9px] sm:text-[10px] font-semibold tracking-wide leading-none transition-colors duration-150 truncate max-w-[60px] text-center"
-                  style={{ color: isActive ? 'var(--cp-accent)' : 'var(--cp-text-muted)' }}
+                  className={`truncate max-w-[60px] text-center transition-colors duration-150 ${isActive ? 'bottom-nav__label--active' : 'bottom-nav__label'}`}
                 >
                   {displayLabel}
                 </span>
@@ -119,7 +118,7 @@ export function CommandDock() {
           <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-red-500/10" />
           <div className="relative z-10 flex flex-col items-center gap-1">
             <LogOut size={24} className="transition-transform duration-150 group-hover:scale-110" strokeWidth={1.5} />
-            <span className="text-[9px] sm:text-[10px] font-semibold tracking-wide leading-none transition-colors duration-150">
+            <span className="bottom-nav__label transition-colors duration-150 group-hover:text-red-500">
               Logout
             </span>
           </div>

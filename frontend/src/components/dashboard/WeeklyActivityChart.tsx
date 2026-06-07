@@ -42,13 +42,15 @@ export function WeeklyActivityChart({ activity }: Props) {
       <h3 className="text-sm font-bold mb-4" style={{ color: 'var(--cp-text-primary)' }}>Weekly Activity</h3>
       
       {total === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm font-medium" style={{ color: 'var(--cp-text-muted)' }}>No applications logged yet this week</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <p className="text-xs font-medium" style={{ color: 'var(--cp-text-muted)' }}>
+            No applications logged yet this week.
+          </p>
         </div>
       ) : (
         <div className="flex-1 min-h-[120px] w-full mt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barSize={24}>
+            <BarChart data={data} barSize={24} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <XAxis 
                 dataKey="fullName" 
                 tickFormatter={(val) => val.charAt(0)}
@@ -67,9 +69,7 @@ export function WeeklyActivityChart({ activity }: Props) {
                 {data.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={entry.isToday ? 'var(--cp-accent)' : entry.isFuture ? 'transparent' : 'var(--cp-border)'} 
-                    stroke={entry.isFuture ? 'var(--cp-border)' : 'none'}
-                    strokeDasharray={entry.isFuture ? '2 2' : 'none'}
+                    fill={entry.count > 0 ? 'var(--cp-accent)' : 'transparent'}
                   />
                 ))}
               </Bar>

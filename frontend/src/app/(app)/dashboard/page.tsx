@@ -53,8 +53,7 @@ function DashboardContent() {
           <button
             key={tab}
             onClick={() => router.push(`/dashboard?tab=${tab}`)}
-            className="pb-3 text-xs font-semibold uppercase tracking-wider relative transition-colors"
-            style={{ color: currentTab === tab ? 'var(--cp-accent)' : 'var(--cp-text-muted)' }}
+            className={`pb-3 uppercase relative transition-colors ${currentTab === tab ? 'tab__label--active' : 'tab__label'}`}
           >
             {tab}
             {currentTab === tab && (
