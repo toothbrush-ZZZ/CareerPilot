@@ -13,6 +13,8 @@ interface AppState {
   setTheme: (theme: 'dark' | 'light') => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  isAuthenticated: boolean;
+  login: (token: string, profile: User) => void;
   cvUploaded: boolean;
   setCvUploaded: (v: boolean) => void;
   toasts: Toast[];
@@ -24,12 +26,12 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   theme: 'dark',
   setTheme: (theme) => set({ theme }),
-  user: {
-    id: 'd3b07384-d113-4956-a5cc-9c60dfd2948b', // backend demo user ID
-    name: 'Devin Pilot (Demo)',
-    email: 'demo@careerpilot.ai'
+  user: null,
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  isAuthenticated: false,
+  login: (token, profile) => {
+    set({ user: profile, isAuthenticated: true });
   },
-  setUser: (user) => set({ user }),
   cvUploaded: false,
   setCvUploaded: (v) => set({ cvUploaded: v }),
   toasts: [],

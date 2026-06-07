@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, Target, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Target, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { useTrackerStore } from '@/lib/store/useTrackerStore';
 import { Goal } from '@/lib/types';
 
 export function GoalPanel() {
-  const { goals, toggleGoal, addGoal } = useTrackerStore();
+  const { goals, toggleGoal, addGoal, removeGoal } = useTrackerStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newGoalText, setNewGoalText] = useState('');
+  const [newGoalDate, setNewGoalDate] = useState('');
 
   const handleAdd = () => {
     if (!newGoalText.trim()) return;
@@ -15,91 +16,103 @@ export function GoalPanel() {
       target: 1,
       current: 0,
       completed: false,
-      linkedTo: 'general'
+      linkedTo: 'general',
+      dueDate: newGoalDate || undefined
     };
     addGoal(newGoal);
     setNewGoalText('');
+    setNewGoalDate('');
     setIsAdding(false);
   };
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
-      {/* Header */}
+      
       <div className="flex items-center justify-between shrink-0">
         <h2
-          className="text-xs font-semibold uppercase tracking-widest flex items-center gap-2"
-          style={{ color: 'var(--text-secondary)' }}
+          className="text-[11px] font-medium tracking-[-0.01em] flex items-center gap-2"
+          style={{ color: 'var(--cp-text-secondary)' }}
         >
-          <Target size={13} style={{ color: 'var(--hud-blue)' }} />
-          Active Goals
+          <Target size={20} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
+          Active goals
         </h2>
         <button
           onClick={() => setIsAdding(!isAdding)}
           className="text-xs font-semibold flex items-center gap-1 transition-colors hover:underline shrink-0"
-          style={{ color: 'var(--hud-blue)' }}
+          style={{ color: 'var(--cp-accent)' }}
         >
-          <Plus size={13} /> Add Goal
+          <Plus size={16} strokeWidth={1.5} /> Add goal
         </button>
       </div>
 
-      {/* Scrollable goal list */}
+      
       <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar h-full items-start">
         {goals.map(goal => (
           <div
             key={goal.id}
-            className="w-56 flex-shrink-0 rounded-xl p-3.5 flex flex-col gap-2.5 cursor-pointer transition-all duration-200 hover:shadow-sm"
+            className="w-56 flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2.5 cursor-pointer transition-all duration-200 group"
             style={{
-              background: 'var(--bg-panel)',
+              background: 'var(--cp-card)',
               border: goal.completed
-                ? '1px solid var(--border)'
-                : `1px solid var(--border)`,
-              borderLeft: !goal.completed ? `2px solid var(--hud-blue)` : `2px solid var(--border)`,
+                ? '1px solid var(--cp-border)'
+                : `1px solid var(--cp-border)`,
+              borderLeft: !goal.completed ? `2px solid var(--cp-accent)` : `2px solid var(--cp-border)`,
               opacity: goal.completed ? 0.6 : 1,
             }}
             onClick={() => toggleGoal(goal.id)}
           >
-            {/* Goal text + check */}
-            <div className="flex items-start gap-2">
-              {goal.completed
-                ? <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--fit-high)' }} />
-                : <Circle size={14} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }} />
-              }
-              <span
-                className="text-sm font-medium leading-snug"
-                style={{
-                  color: goal.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                  textDecoration: goal.completed ? 'line-through' : undefined,
-                }}
+            
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2 min-w-0">
+                {goal.completed
+                  ? <CheckCircle2 size={16} strokeWidth={1.5} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--cp-accent)' }} />
+                  : <Circle size={16} strokeWidth={1.5} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--cp-text-muted)' }} />
+                }
+                <span
+                  className="text-sm font-medium leading-snug break-words"
+                  style={{
+                    color: goal.completed ? 'var(--cp-text-muted)' : 'var(--cp-text-primary)',
+                    textDecoration: goal.completed ? 'line-through' : undefined,
+                  }}
+                >
+                  {goal.text}
+                </span>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); removeGoal(goal.id); }}
+                className="p-1 -mr-1 -mt-1 rounded-md text-[var(--cp-text-muted)] hover:text-[var(--cp-danger)] transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                title="Delete Goal"
               >
-                {goal.text}
-              </span>
+                <Trash2 size={14} />
+              </button>
             </div>
 
-            {/* Progress */}
+            
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <div
-                  className="h-1.5 flex-1 rounded-full overflow-hidden"
-                  style={{ background: 'var(--bg-inset)' }}
+                  className="min-h-[4px] flex-1 overflow-hidden"
+                  style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}
                 >
                   <div
-                    className="h-full rounded-full transition-all duration-500"
+                    className="h-full transition-all duration-500"
                     style={{
                       width: `${Math.min(100, (goal.current / goal.target) * 100)}%`,
-                      background: goal.completed ? 'var(--fit-high)' : 'var(--hud-blue)',
+                      background: 'var(--cp-accent)',
+                      borderRadius: '4px',
                     }}
                   />
                 </div>
                 <span
                   className="text-[10px] font-mono flex-shrink-0"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--cp-text-muted)' }}
                 >
                   {goal.current}/{goal.target}
                 </span>
               </div>
 
               {goal.dueDate && (
-                <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-[10px] font-mono" style={{ color: 'var(--cp-text-muted)' }}>
                   Due: {goal.dueDate}
                 </span>
               )}
@@ -107,13 +120,13 @@ export function GoalPanel() {
           </div>
         ))}
 
-        {/* Add new goal card */}
+        
         {isAdding && (
           <div
-            className="w-56 flex-shrink-0 rounded-xl p-3.5 flex flex-col gap-2"
+            className="w-56 flex-shrink-0 rounded-[10px] p-3.5 flex flex-col gap-2"
             style={{
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--hud-blue)',
+              background: 'var(--cp-card)',
+              border: '1px solid var(--cp-accent)',
             }}
           >
             <input
@@ -128,8 +141,19 @@ export function GoalPanel() {
               placeholder="Describe your goal..."
               className="w-full bg-transparent text-sm outline-none"
               style={{
-                color: 'var(--text-primary)',
-                borderBottom: '1px solid var(--border)',
+                color: 'var(--cp-text-primary)',
+                borderBottom: '1px solid var(--cp-border)',
+                paddingBottom: '4px',
+              }}
+            />
+            <input
+              type="date"
+              value={newGoalDate}
+              onChange={e => setNewGoalDate(e.target.value)}
+              className="w-full bg-transparent text-xs outline-none mt-2"
+              style={{
+                color: 'var(--cp-text-secondary)',
+                borderBottom: '1px solid var(--cp-border)',
                 paddingBottom: '4px',
               }}
             />
@@ -138,14 +162,14 @@ export function GoalPanel() {
                 onClick={handleAdd}
                 disabled={!newGoalText.trim()}
                 className="text-xs font-semibold hover:underline disabled:opacity-40"
-                style={{ color: 'var(--hud-blue)' }}
+                style={{ color: 'var(--cp-accent)' }}
               >
-                Save
+                Save goal
               </button>
               <button
                 onClick={() => setIsAdding(false)}
                 className="text-xs"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: 'var(--cp-text-muted)' }}
               >
                 Cancel
               </button>

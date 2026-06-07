@@ -20,11 +20,19 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    getDashboardStats().then(setStats);
-    if (jobs.length === 0) {
-      searchJobs();
-    }
-  }, [jobs.length, searchJobs]);
+    getDashboardStats()
+      .then(setStats)
+      .catch((err) => {
+        console.warn('Failed to load dashboard stats (backend might be offline).');
+        setStats({
+          streak: 0,
+          applicationsThisWeek: 0,
+          skillsAdded: 0,
+          roadmapPercent: 0,
+          weeklyActivity: [0, 0, 0, 0, 0, 0, 0],
+        });
+      });
+  }, []);
 
   if (!stats) {
     return (
@@ -34,20 +42,20 @@ export default function DashboardPage() {
     );
   }
 
-  const showNudge = stats.applicationsThisWeek === 0;
+  const hasNudge = !!stats.nudge;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="p-6 max-w-7xl mx-auto space-y-6"
+      className="p-6 max-w-7xl mx-auto space-y-6 overflow-y-auto h-full custom-scrollbar"
     >
-      {showNudge && (
+      {hasNudge && stats.nudge && (
         <NudgeCard 
-          message="You haven't applied this week. 3 matches found for your profile."
-          linkText="View Jobs"
-          linkHref="/jobs"
+          message={stats.nudge.message}
+          linkText={stats.nudge.link_text}
+          linkHref={stats.nudge.link_href}
         />
       )}
 
@@ -55,26 +63,26 @@ export default function DashboardPage() {
         <div
           className="rounded-xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0"
           style={{
-            background: 'var(--hud-blue-glow)',
-            border: '1px solid rgba(59,130,246,0.3)',
-            borderLeft: '3px solid var(--hud-blue)',
+            background: 'var(--cp-accent-glow)',
+            border: '1px solid var(--cp-border-accent)',
+            borderLeft: '3px solid var(--cp-accent)',
           }}
         >
           <div className="flex items-center gap-3">
-            <UploadCloud className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--hud-blue)' }} />
+            <UploadCloud size={20} className="flex-shrink-0" style={{ color: 'var(--cp-accent)' }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Upload your CV to unlock everything</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cp-text-primary)' }}>Upload your CV to unlock everything</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cp-text-secondary)' }}>
                 Job matching, fit scores, cover letters, and roadmaps are all grounded in your actual profile.
               </p>
             </div>
           </div>
           <Link
             href="/profile"
-            className="text-xs font-semibold hover:underline whitespace-nowrap sm:ml-6"
-            style={{ color: 'var(--hud-blue)' }}
+            className="text-xs font-semibold hover:underline whitespace-nowrap sm:ml-6 flex items-center gap-1"
+            style={{ color: 'var(--cp-accent)' }}
           >
-            Upload CV →
+            Upload CV <UploadCloud size={16} />
           </Link>
         </div>
       )}

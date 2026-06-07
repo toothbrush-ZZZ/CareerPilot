@@ -15,7 +15,6 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -29,17 +28,26 @@ export function KanbanBoard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRole, setNewRole] = useState('');
   const [newCompany, setNewCompany] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newJobUrl, setNewJobUrl] = useState('');
+  const [newNotes, setNewNotes] = useState('');
 
   const handleAdd = () => {
     if (!newRole.trim() || !newCompany.trim()) return;
     addCard({
       role: newRole,
       company: newCompany,
+      location: newLocation,
+      jobUrl: newJobUrl,
+      notes: newNotes,
       columnId: 'applied',
       appliedAt: new Date().toISOString()
     });
     setNewRole('');
     setNewCompany('');
+    setNewLocation('');
+    setNewJobUrl('');
+    setNewNotes('');
     setShowAddForm(false);
   };
 
@@ -61,8 +69,7 @@ export function KanbanBoard() {
     setActiveCard(data.current as ApplicationCard);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    // Basic implementation relies on DragEnd for column movement in this simplified version
+  const handleDragOver = () => {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -76,14 +83,12 @@ export function KanbanBoard() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Check if dropping over a column or another card
     let targetColumnId: KanbanColumnId | null = null;
     
     const isOverAColumn = columns.find(col => col.id === overId);
     if (isOverAColumn) {
       targetColumnId = overId as KanbanColumnId;
     } else {
-      // Find which column the target card belongs to
       for (const col of columns) {
         if (col.cards.find(c => c.id === overId)) {
           targetColumnId = col.id;
@@ -109,27 +114,27 @@ export function KanbanBoard() {
     >
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 snap-x snap-mandatory h-full custom-scrollbar">
         {columns.map((column) => (
-          <div key={column.id} className="flex flex-col min-w-[260px] sm:w-80 flex-shrink-0 snap-start">
+          <div key={column.id} className="flex flex-col flex-1 min-w-[220px] max-w-[300px] flex-shrink-0 snap-start">
             <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="text-xs font-semibold uppercase tracking-widest flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+              <h3 className="text-[11px] font-medium tracking-[-0.01em] flex items-center gap-2" style={{ color: 'var(--cp-text-secondary)' }}>
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{
                     background:
-                      column.id === 'applied'      ? 'var(--status-applied)'   :
-                      column.id === 'interviewing' ? 'var(--status-interview)' :
-                      column.id === 'offer'        ? 'var(--status-offer)'     :
-                      'var(--status-rejected)'
+                      column.id === 'applied'      ? '#8888a8'   :
+                      column.id === 'interviewing' ? '#c8a96e' :
+                      column.id === 'offer'        ? '#4ade80'     :
+                      '#9a7a7a'
                   }}
                 />
                 {column.label}
               </h3>
               <span
-                className="text-xs font-mono px-2 py-0.5 rounded-md"
+                className="text-[11px] font-medium px-2 py-[1px] rounded-full"
                 style={{
-                  background: 'var(--bg-inset)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-muted)',
+                  background: 'var(--cp-surface)',
+                  border: '0.5px solid var(--cp-border)',
+                  color: 'var(--cp-text-muted)',
                 }}
               >
                 {column.cards.length}
@@ -138,8 +143,8 @@ export function KanbanBoard() {
 
             <div
               id={column.id}
-              className="flex-1 rounded-xl p-3 flex flex-col gap-2.5 min-h-[200px]"
-              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)' }}
+              className="flex-1 rounded-[10px] p-3 flex flex-col gap-2.5 min-h-[200px]"
+              style={{ background: 'var(--cp-surface)', border: '0.5px solid var(--cp-border)' }}
             >
               <SortableContext
                 id={column.id}
@@ -147,7 +152,14 @@ export function KanbanBoard() {
                 strategy={verticalListSortingStrategy}
               >
                 {column.cards.length === 0 && (
-                  <p className="text-xs text-center mt-4 italic" style={{ color: 'var(--text-muted)' }}>No applications yet</p>
+                  <div 
+                    className="flex flex-col items-center justify-center flex-1 min-h-[140px] rounded-[10px] border border-dashed transition-colors"
+                    style={{ borderColor: 'var(--cp-border)', background: 'transparent' }}
+                  >
+                    <p className="text-[11px] font-medium tracking-[-0.01em]" style={{ color: 'var(--cp-text-muted)', opacity: 0.7 }}>
+                      No applications yet
+                    </p>
+                  </div>
                 )}
                 {column.cards.map((card) => (
                   <KanbanCard key={card.id} card={card} />
@@ -157,21 +169,19 @@ export function KanbanBoard() {
               {column.id === 'applied' && !showAddForm && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="mt-1 w-full py-2 rounded-lg text-xs transition-colors"
+                  className="mt-1 w-full py-2 rounded-[8px] text-xs font-semibold transition-all hover:bg-[var(--cp-accent-dim)]"
                   style={{
-                    border: '1px dashed var(--border)',
-                    color: 'var(--text-muted)',
+                    border: '0.5px solid var(--cp-accent-glow)',
+                    color: 'var(--cp-accent)',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--hud-blue)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--hud-blue)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
                 >
-                  + Add Application
+                  Add application
                 </button>
               )}
               {column.id === 'applied' && showAddForm && (
                 <div
-                  className="rounded-lg p-3 mt-1 space-y-2"
-                  style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+                  className="rounded-[8px] p-3 mt-1 space-y-2"
+                  style={{ background: 'var(--cp-card)', border: '0.5px solid var(--cp-border)' }}
                 >
                   <input
                     autoFocus
@@ -181,8 +191,8 @@ export function KanbanBoard() {
                     onKeyDown={handleKeyDown}
                     className="w-full bg-transparent text-sm outline-none pb-1 transition-colors"
                     style={{
-                      borderBottom: '1px solid var(--border)',
-                      color: 'var(--text-primary)',
+                      borderBottom: '1px solid var(--cp-border)',
+                      color: 'var(--cp-text-primary)',
                     }}
                   />
                   <input
@@ -190,24 +200,56 @@ export function KanbanBoard() {
                     value={newCompany}
                     onChange={e => setNewCompany(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="w-full bg-transparent text-sm outline-none pb-1 transition-colors"
+                    className="w-full bg-transparent text-sm outline-none pb-1 mt-2 transition-colors"
                     style={{
-                      borderBottom: '1px solid var(--border)',
-                      color: 'var(--text-primary)',
+                      borderBottom: '1px solid var(--cp-border)',
+                      color: 'var(--cp-text-primary)',
+                    }}
+                  />
+                  <input
+                    placeholder="Location (Optional)"
+                    value={newLocation}
+                    onChange={e => setNewLocation(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 transition-colors"
+                    style={{
+                      borderBottom: '1px solid var(--cp-border)',
+                      color: 'var(--cp-text-primary)',
+                    }}
+                  />
+                  <input
+                    placeholder="Job URL (Optional)"
+                    value={newJobUrl}
+                    onChange={e => setNewJobUrl(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 transition-colors"
+                    style={{
+                      borderBottom: '1px solid var(--cp-border)',
+                      color: 'var(--cp-text-primary)',
+                    }}
+                  />
+                  <textarea
+                    placeholder="Notes (Optional)"
+                    value={newNotes}
+                    onChange={e => setNewNotes(e.target.value)}
+                    className="w-full bg-transparent text-xs outline-none pb-1 mt-2 resize-none h-12 transition-colors custom-scrollbar"
+                    style={{
+                      borderBottom: '1px solid var(--cp-border)',
+                      color: 'var(--cp-text-primary)',
                     }}
                   />
                   <div className="flex gap-3 pt-1">
                     <button
                       onClick={handleAdd}
                       className="text-xs font-semibold hover:underline"
-                      style={{ color: 'var(--hud-blue)' }}
+                      style={{ color: 'var(--cp-accent)' }}
                     >
                       Add
                     </button>
                     <button
                       onClick={() => setShowAddForm(false)}
                       className="text-xs transition-colors"
-                      style={{ color: 'var(--text-muted)' }}
+                      style={{ color: 'var(--cp-text-muted)' }}
                     >
                       Cancel
                     </button>

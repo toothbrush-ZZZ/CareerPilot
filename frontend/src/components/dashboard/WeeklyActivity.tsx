@@ -11,25 +11,25 @@ export function WeeklyActivity({ activity }: WeeklyActivityProps) {
   return (
     <div
       className="rounded-xl h-full flex flex-col overflow-hidden"
-      style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+      style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}
     >
-      {/* Header */}
+      
       <div
         className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        style={{ borderBottom: '1px solid var(--cp-border)' }}
       >
         <h3
-          className="text-xs font-semibold uppercase tracking-widest"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-xs font-semibold tracking-[-0.01em]"
+          style={{ color: 'var(--cp-text-muted)' }}
         >
           Activity
         </h3>
-        <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+        <span className="text-[10px] font-mono" style={{ color: 'var(--cp-text-muted)' }}>
           This week
         </span>
       </div>
 
-      {/* Chart */}
+      
       <div className="flex-1 px-4 pb-4 pt-3 flex flex-col justify-end">
         <div className="flex items-end justify-between gap-1 h-28">
           {activity.map((val, idx) => {
@@ -45,17 +45,17 @@ export function WeeklyActivity({ activity }: WeeklyActivityProps) {
                       height: `${heightPct}%`,
                       minHeight: '3px',
                       background: val === 0
-                        ? 'var(--bg-inset)'
-                        : `var(--hud-blue)`,
+                        ? 'var(--cp-surface)'
+                        : `var(--cp-accent)`,
                       opacity: isWeekend && val === 0 ? 0.5 : val === 0 ? 0.4 : 1,
-                      border: val > 0 ? '1px solid rgba(59,130,246,0.3)' : '1px solid var(--border)',
+                      border: val > 0 ? '1px solid var(--cp-border-accent)' : '1px solid var(--cp-border)',
                     }}
                   />
                 </div>
                 <span
                   className="text-[9px] font-mono font-semibold"
                   style={{
-                    color: val > 0 ? 'var(--hud-blue)' : 'var(--text-muted)',
+                    color: val > 0 ? 'var(--cp-accent)' : 'var(--cp-text-muted)',
                     opacity: isWeekend ? 0.7 : 1,
                   }}
                 >

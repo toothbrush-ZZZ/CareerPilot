@@ -75,10 +75,10 @@ export const MOCK_JOBS: Job[] = [
 
 export const MOCK_MESSAGES: Message[] = [
   {
-    id: 'msg-1',
+    id: 'msg-welcome',
     role: 'assistant',
-    content: 'Hello! I am your CareerHUD AI. I have analyzed your profile and I am ready to help you land your next role. What would you like to focus on today?',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    content: 'Hello! I am your CareerPilot AI. I have analyzed your profile and I am ready to help you land your next role. What would you like to focus on today?',
+    timestamp: new Date().toISOString(),
   },
 ];
 

@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { KanbanBoard } from '@/components/tracker/KanbanBoard';
 import { GoalPanel } from '@/components/tracker/GoalPanel';
-import { CalendarToDo } from '@/components/tracker/CalendarToDo';
+import { CalendarView } from '@/components/tracker/CalendarView';
 import { useTrackerStore } from '@/lib/store/useTrackerStore';
 
 export default function TrackerPage() {
@@ -26,7 +26,7 @@ export default function TrackerPage() {
           <GoalPanel />
         </div>
         <div className="h-full overflow-hidden">
-          <CalendarToDo />
+          <CalendarView />
         </div>
       </div>
 

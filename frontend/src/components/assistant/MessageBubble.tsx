@@ -14,49 +14,49 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div
         className={`flex max-w-[85%] sm:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
       >
-        {/* Avatar */}
+        
         <div
           className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-1 mx-2.5"
           style={{
-            background: isUser ? 'var(--hud-blue-glow)' : 'var(--bg-inset)',
-            border: `1px solid ${isUser ? 'var(--hud-blue)' : 'var(--border)'}`,
-            color: 'var(--hud-blue)',
+            background: isUser ? 'var(--cp-accent-glow)' : 'var(--cp-surface)',
+            border: `1px solid ${isUser ? 'var(--cp-accent)' : 'var(--cp-border)'}`,
+            color: 'var(--cp-accent)',
           }}
         >
-          {isUser ? <UserIcon size={13} /> : <Bot size={13} />}
+          {isUser ? <UserIcon size={16} strokeWidth={1.5} /> : <Bot size={16} strokeWidth={1.5} />}
         </div>
 
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-          {/* Badge (AI only) */}
+          
           {!isUser && (
             <div className="flex items-center gap-1.5 mb-1.5">
               <span
-                className="text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded"
+                className="text-[9px] tracking-widest font-bold px-1.5 py-0.5 rounded"
                 style={{
-                  color: 'var(--hud-blue)',
-                  background: 'var(--hud-blue-glow)',
-                  border: '1px solid rgba(59,130,246,0.2)',
+                  color: 'var(--cp-accent)',
+                  background: 'var(--cp-accent-glow)',
+                  border: '1px solid var(--cp-border-accent)',
                 }}
               >
-                HUD
+                AI
               </span>
             </div>
           )}
 
-          {/* Bubble */}
+          
           <div
             className="px-3.5 py-2.5 text-sm leading-relaxed"
             style={
               isUser
                 ? {
-                    background: 'var(--hud-blue)',
-                    color: '#ffffff',
+                    background: 'var(--cp-accent)',
+                    color: 'var(--cp-bg)',
                     borderRadius: '16px 4px 16px 16px',
                   }
                 : {
-                    background: 'var(--bg-panel)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border)',
+                    background: 'var(--cp-card)',
+                    color: 'var(--cp-text-primary)',
+                    border: '1px solid var(--cp-border)',
                     borderRadius: '4px 16px 16px 16px',
                   }
             }
@@ -65,14 +65,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             {message.isStreaming && (
               <span
                 className="inline-block w-1 h-3 ml-1 animate-pulse rounded-sm"
-                style={{ background: isUser ? 'rgba(255,255,255,0.7)' : 'var(--hud-blue)' }}
+                style={{ background: isUser ? 'var(--cp-bg)' : 'var(--cp-accent)' }}
               />
             )}
           </div>
 
-          {/* Timestamp */}
+          
           <div className="mt-1">
-            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-[10px]" style={{ color: 'var(--cp-text-muted)' }}>
               {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>

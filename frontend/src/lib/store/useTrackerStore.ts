@@ -4,9 +4,11 @@ import {
   getApplications,
   createApplication,
   updateApplicationStatus,
+  deleteApplication,
   getGoals,
   createGoal,
-  toggleGoalCompletion
+  toggleGoalCompletion,
+  deleteGoal
 } from '../utils/api';
 import { useAppStore } from './useAppStore';
 
@@ -24,11 +26,13 @@ interface TrackerState {
   loadData: () => Promise<void>;
   moveCard: (cardId: string, toColumn: KanbanColumnId) => void;
   addCard: (card: Omit<ApplicationCard, 'id'>) => Promise<void>;
+  removeCard: (id: string) => Promise<void>;
   addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
   toggleGoal: (id: string) => Promise<void>;
+  removeGoal: (id: string) => Promise<void>;
 }
 
-export const useTrackerStore = create<TrackerState>((set, get) => ({
+export const useTrackerStore = create<TrackerState>((set) => ({
   columns: INITIAL_COLUMNS,
   goals: [],
   isLoading: false,
@@ -45,7 +49,7 @@ export const useTrackerStore = create<TrackerState>((set, get) => ({
 
       set({ columns: newCols, goals, isLoading: false });
     } catch (e) {
-      console.error('Failed to load tracker data', e);
+      console.warn('Failed to load tracker data (backend might be offline).');
       useAppStore.getState().addToast({ message: 'Failed to load tracker data', type: 'error' });
       set({ isLoading: false });
     }
@@ -78,13 +82,11 @@ export const useTrackerStore = create<TrackerState>((set, get) => ({
       return { columns: finalColumns };
     });
 
-    // Update backend asynchronously
     try {
       await updateApplicationStatus(cardId, toColumnId);
     } catch (e) {
-      console.error('Failed to update application status', e);
+      console.warn('Failed to update application status (backend might be offline).');
       useAppStore.getState().addToast({ message: 'Failed to save application status', type: 'error' });
-      // Revert could be implemented here
     }
   },
   
@@ -101,7 +103,7 @@ export const useTrackerStore = create<TrackerState>((set, get) => ({
         });
         return { columns: newColumns };
       });
-    } catch (e) {
+    } catch {
       useAppStore.getState().addToast({ message: 'Failed to create application', type: 'error' });
     }
   },
@@ -112,25 +114,47 @@ export const useTrackerStore = create<TrackerState>((set, get) => ({
       const newGoal = { ...goalData, id, current: 0, completed: false, target: 1 } as Goal;
       set((state) => ({ goals: [...state.goals, newGoal] }));
     } catch (e) {
-      console.error('Failed to create goal', e);
+      console.warn('Failed to create goal (backend might be offline).');
       useAppStore.getState().addToast({ message: 'Failed to create goal/todo', type: 'error' });
     }
   },
   
   toggleGoal: async (id) => {
-    // Optimistic UI update
     set((state) => ({
       goals: state.goals.map(g => g.id === id ? { ...g, completed: !g.completed, current: g.completed ? 0 : 1 } : g)
     }));
 
     try {
       await toggleGoalCompletion(id);
-    } catch (e) {
-      // Revert if failed
+    } catch {
       set((state) => ({
         goals: state.goals.map(g => g.id === id ? { ...g, completed: !g.completed, current: g.completed ? 0 : 1 } : g)
       }));
       useAppStore.getState().addToast({ message: 'Failed to update goal', type: 'error' });
+    }
+  },
+  
+  removeCard: async (id) => {
+    const prevColumns = useTrackerStore.getState().columns;
+    set((state) => ({
+      columns: state.columns.map(col => ({ ...col, cards: col.cards.filter(c => c.id !== id) }))
+    }));
+    try {
+      await deleteApplication(id);
+    } catch {
+      set({ columns: prevColumns });
+      useAppStore.getState().addToast({ message: 'Failed to delete application', type: 'error' });
+    }
+  },
+
+  removeGoal: async (id) => {
+    const prevGoals = useTrackerStore.getState().goals;
+    set((state) => ({ goals: state.goals.filter(g => g.id !== id) }));
+    try {
+      await deleteGoal(id);
+    } catch {
+      set({ goals: prevGoals });
+      useAppStore.getState().addToast({ message: 'Failed to delete goal', type: 'error' });
     }
   }
 }));

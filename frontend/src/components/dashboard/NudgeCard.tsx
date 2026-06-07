@@ -17,33 +17,33 @@ export function NudgeCard({ message, linkText, linkHref }: NudgeCardProps) {
 
   return (
     <div
-      className="rounded-xl px-4 py-3 flex items-center justify-between gap-4 transition-all"
+      className="rounded-[10px] px-4 py-3 flex items-center justify-between gap-4 transition-all"
       style={{
-        background: 'var(--hud-blue-glow)',
-        border: '1px solid rgba(59,130,246,0.25)',
-        borderLeft: '3px solid var(--hud-blue)',
+        background: 'var(--cp-accent-glow)',
+        border: '0.5px solid var(--cp-border-accent)',
+        borderLeft: '3px solid var(--cp-accent)',
       }}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <Sparkles size={14} className="flex-shrink-0" style={{ color: 'var(--hud-blue)' }} />
-        <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+        <Sparkles size={16} strokeWidth={1.5} className="flex-shrink-0" style={{ color: 'var(--cp-accent)' }} />
+        <span className="text-sm font-medium truncate" style={{ color: 'var(--cp-text-primary)' }}>
           {message}
         </span>
         <Link
           href={linkHref}
           className="text-xs font-semibold flex-shrink-0 flex items-center gap-1 hover:underline transition-colors"
-          style={{ color: 'var(--hud-blue)' }}
+          style={{ color: 'var(--cp-accent)' }}
         >
-          {linkText} <ArrowRight size={12} />
+          {linkText} <ArrowRight size={16} strokeWidth={1.5} />
         </Link>
       </div>
       <button
         onClick={() => setIsVisible(false)}
         className="flex-shrink-0 transition-colors"
-        style={{ color: 'var(--text-muted)' }}
-        aria-label="Dismiss"
+        style={{ color: 'var(--cp-text-muted)' }}
+        aria-label="Dismiss message"
       >
-        <X size={15} />
+        <X size={20} strokeWidth={1.5} />
       </button>
     </div>
   );

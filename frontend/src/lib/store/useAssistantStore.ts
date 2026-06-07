@@ -9,8 +9,9 @@ interface AssistantState {
   addMessage: (msg: Message) => void;
   updateMessage: (id: string, content: string) => void;
   setIsTyping: (v: boolean) => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, jobTitle?: string, jobCompany?: string) => Promise<void>;
   clearMessages: () => void;
+  clearSession: () => Promise<void>;
 }
 
 export const useAssistantStore = create<AssistantState>((set, get) => ({
@@ -28,10 +29,9 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
     messages: state.messages.map(m => m.id === id ? { ...m, content } : m)
   })),
   setIsTyping: (v) => set({ isTyping: v }),
-  sendMessage: async (content: string) => {
+  sendMessage: async (content: string, jobTitle?: string, jobCompany?: string) => {
     const { messages, addMessage, updateMessage, setIsTyping } = get();
     
-    // Add user message
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -43,7 +43,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
     setIsTyping(true);
     
     try {
-      const fullContent = await sendChatMessage([...messages, userMsg], content);
+      const fullContent = await sendChatMessage([...messages, userMsg], content, jobTitle, jobCompany);
       
       const assistantMsgId = (Date.now() + 1).toString();
       addMessage({
@@ -54,29 +54,44 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
         isStreaming: true
       });
 
-      // Simulate streaming locally for UX
       const words = fullContent.split(' ');
       let currentText = '';
       
       for (const word of words) {
         currentText += word + ' ';
         updateMessage(assistantMsgId, currentText);
-        // Small delay to simulate typing
         await new Promise(resolve => setTimeout(resolve, 20));
       }
       
-      // Finalize message
       set((state) => ({
         messages: state.messages.map(m => m.id === assistantMsgId ? { ...m, isStreaming: false } : m)
       }));
       
     } catch (error) {
-      console.error("Failed to send message", error);
+      console.warn("Failed to send message (backend might be offline).");
       useAppStore.getState().addToast({ message: 'Failed to connect to AI assistant.', type: 'error' });
       setIsTyping(false);
     } finally {
       setIsTyping(false);
     }
   },
-  clearMessages: () => set({ messages: [] })
+  clearMessages: () => set({ messages: [] }),
+  clearSession: async () => {
+    try {
+      const { clearChatSession } = await import('../utils/api');
+      await clearChatSession();
+      set({
+        messages: [
+          {
+            id: 'welcome',
+            role: 'assistant',
+            content: "Hello! I've cleared my memory. How can I help you?",
+            timestamp: new Date().toISOString()
+          }
+        ]
+      });
+    } catch (error) {
+      console.warn("Failed to clear session.");
+    }
+  }
 }));

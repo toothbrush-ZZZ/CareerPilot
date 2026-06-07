@@ -16,11 +16,11 @@ export function QuickPrompts({ onSelect }: QuickPromptsProps) {
   return (
     <div className="flex flex-col gap-2.5">
       <span
-        className="text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5"
-        style={{ color: 'var(--text-muted)' }}
+        className="text-[9px] font-bold tracking-widest flex items-center gap-1.5"
+        style={{ color: 'var(--cp-text-muted)' }}
       >
-        <Sparkles size={9} style={{ color: 'var(--hud-blue)' }} />
-        Suggested Queries
+        <Sparkles size={16} strokeWidth={1.5} style={{ color: 'var(--cp-accent)' }} />
+        Suggested queries
       </span>
       <div className="flex flex-col gap-1.5">
         {PROMPTS.map((p, idx) => {
@@ -31,28 +31,28 @@ export function QuickPrompts({ onSelect }: QuickPromptsProps) {
               onClick={() => onSelect(p.text)}
               className="text-left px-3 py-2.5 rounded-xl text-sm flex items-center justify-between gap-2 group transition-all"
               style={{
-                background: 'var(--bg-inset)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-secondary)',
+                background: 'var(--cp-surface)',
+                border: '1px solid var(--cp-border)',
+                color: 'var(--cp-text-secondary)',
               }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = 'rgba(37,99,235,0.35)';
-                el.style.background = 'rgba(37,99,235,0.05)';
-                el.style.color = 'var(--text-primary)';
+                el.style.borderColor = 'var(--cp-border-accent)';
+                el.style.background = 'var(--cp-accent-dim)';
+                el.style.color = 'var(--cp-text-primary)';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = 'var(--border)';
-                el.style.background = 'var(--bg-inset)';
-                el.style.color = 'var(--text-secondary)';
+                el.style.borderColor = 'var(--cp-border)';
+                el.style.background = 'var(--cp-surface)';
+                el.style.color = 'var(--cp-text-secondary)';
               }}
             >
               <span className="flex items-center gap-2 min-w-0">
-                <Icon size={13} className="flex-shrink-0" style={{ color: 'var(--hud-blue)', opacity: 0.75 }} />
+                <Icon size={16} strokeWidth={1.5} className="flex-shrink-0" style={{ color: 'var(--cp-accent)', opacity: 0.75 }} />
                 <span className="truncate text-xs leading-snug">{p.text}</span>
               </span>
-              <ArrowRight size={11} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--hud-blue)' }} />
+              <ArrowRight size={16} strokeWidth={1.5} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--cp-accent)' }} />
             </button>
           );
         })}

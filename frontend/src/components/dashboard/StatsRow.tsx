@@ -11,55 +11,55 @@ export function StatsRow({ stats }: StatsRowProps) {
   const { cvUploaded } = useAppStore();
 
   const streakColor = stats.streak >= 7
-    ? 'var(--fit-high)'
+    ? 'var(--cp-accent)'
     : stats.streak >= 3
-    ? 'var(--fit-mid)'
-    : 'var(--hud-blue)';
+    ? 'var(--cp-gold)'
+    : 'var(--cp-accent)';
 
   const items = [
     {
       label: 'Streak',
       value: stats.streak,
-      suffix: 'd',
+      suffix: ' days',
       icon: Flame,
-      iconColor: '#d97706',
+      iconColor: 'var(--cp-gold)',
       valueColor: streakColor,
-      context: 'days in a row',
+      context: 'in a row',
       tint: 'stat-amber',
-      accentBar: '#d97706',
+      accentBar: 'var(--cp-gold)',
     },
     {
       label: 'Applications',
       value: stats.applicationsThisWeek,
       suffix: '',
       icon: Send,
-      iconColor: '#2563eb',
-      valueColor: 'var(--hud-blue)',
-      context: 'this week · goal: 5',
+      iconColor: 'var(--cp-accent)',
+      valueColor: 'var(--cp-accent)',
+      context: 'sent this week (goal: 5)',
       tint: 'stat-blue',
-      accentBar: '#2563eb',
+      accentBar: 'var(--cp-accent)',
     },
     {
-      label: 'Skills Added',
+      label: 'Skills added',
       value: stats.skillsAdded,
       suffix: '',
       icon: Zap,
-      iconColor: '#7c3aed',
-      valueColor: '#7c3aed',
-      context: 'from last CV update',
+      iconColor: 'var(--cp-text-secondary)',
+      valueColor: 'var(--cp-text-secondary)',
+      context: 'from your last CV update',
       tint: 'stat-purple',
-      accentBar: '#7c3aed',
+      accentBar: 'var(--cp-text-secondary)',
     },
     {
-      label: 'Roadmap',
+      label: 'Roadmap progress',
       value: stats.roadmapPercent,
       suffix: '%',
       icon: Map,
-      iconColor: '#059669',
-      valueColor: 'var(--fit-high)',
-      context: 'of current phase',
+      iconColor: 'var(--cp-accent)',
+      valueColor: 'var(--cp-accent)',
+      context: 'completed for this phase',
       tint: 'stat-green',
-      accentBar: '#059669',
+      accentBar: 'var(--cp-accent)',
     },
   ];
 
@@ -70,10 +70,10 @@ export function StatsRow({ stats }: StatsRowProps) {
         return (
           <div
             key={idx}
-            className={`${item.tint} rounded-xl p-4 flex flex-col gap-1.5 card-hover relative overflow-hidden`}
-            style={{ border: '1px solid var(--border)' }}
+            className={`${item.tint} rounded-[10px] p-4 flex flex-col gap-1.5 relative overflow-hidden`}
+            style={{ border: '1px solid var(--cp-border)' }}
           >
-            {/* Subtle top accent bar */}
+            
             <div
               className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl"
               style={{ background: item.accentBar, opacity: 0.7 }}
@@ -81,29 +81,29 @@ export function StatsRow({ stats }: StatsRowProps) {
 
             <div className="flex items-start justify-between pt-0.5">
               <span
-                className="text-[10px] font-semibold uppercase tracking-widest"
-                style={{ color: 'var(--text-muted)' }}
+                className="text-[11px] font-medium tracking-[-0.01em]"
+                style={{ color: 'var(--cp-text-muted)' }}
               >
                 {item.label}
               </span>
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: `${item.accentBar}18` }}
+                style={{ background: 'var(--cp-surface)' }}
               >
-                <Icon size={13} style={{ color: item.iconColor }} />
+                <Icon size={20} strokeWidth={1.5} style={{ color: item.iconColor }} />
               </div>
             </div>
 
             <span
-              className="text-2xl font-mono font-bold leading-tight"
-              style={{ color: cvUploaded ? item.valueColor : 'var(--text-muted)' }}
+              className="text-2xl  font-bold leading-tight"
+              style={{ color: cvUploaded ? item.valueColor : 'var(--cp-text-muted)' }}
             >
               {!cvUploaded ? '—' : `${item.value}${item.suffix}`}
             </span>
 
             <span
               className="text-[10px] leading-tight"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: 'var(--cp-text-muted)' }}
             >
               {item.context}
             </span>

@@ -8,10 +8,10 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<KanbanColumnId, { label: string; color: string; bg: string; border: string }> = {
-  applied:      { label: 'Applied',      color: 'var(--status-applied)',   bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.3)' },
-  interviewing: { label: 'Interviewing', color: 'var(--status-interview)', bg: 'rgba(217,119,6,0.08)',   border: 'rgba(217,119,6,0.3)' },
-  offer:        { label: 'Offer',        color: 'var(--status-offer)',      bg: 'rgba(5,150,105,0.08)',   border: 'rgba(5,150,105,0.3)' },
-  rejected:     { label: 'Rejected',     color: 'var(--status-rejected)',   bg: 'rgba(220,38,38,0.08)',   border: 'rgba(220,38,38,0.3)' },
+  applied:      { label: 'Applied',      color: '#8888a8', bg: 'rgba(136,136,168,0.10)', border: '1px solid rgba(136,136,168,0.20)' },
+  interviewing: { label: 'Interviewing', color: '#c8a96e', bg: 'rgba(200,169,110,0.10)', border: '1px solid rgba(200,169,110,0.20)' },
+  offer:        { label: 'Offer',        color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: '1px solid rgba(74,222,128,0.20)' },
+  rejected:     { label: 'Rejected',     color: '#9a7a7a', bg: 'rgba(154,122,122,0.08)', border: '1px solid rgba(154,122,122,0.18)' },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -21,13 +21,13 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider',
+        'inline-flex items-center px-[10px] py-[3px] rounded-full text-[11px] font-medium tracking-[-0.01em]',
         className
       )}
       style={{
         color: config.color,
         background: config.bg,
-        border: `1px solid ${config.border}`,
+        border: config.border,
       }}
     >
       {config.label}

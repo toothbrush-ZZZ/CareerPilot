@@ -35,7 +35,7 @@ export function PulseLoader({ size = 48, className }: PulseLoaderProps) {
         animate={{ scale: 1.4, opacity: 0 }}
         transition={{ ...transition, delay: 0.7 }}
       />
-      {/* Center dot */}
+      
       <div className="absolute w-2 h-2 rounded-full bg-hud-blue" />
     </div>
   );

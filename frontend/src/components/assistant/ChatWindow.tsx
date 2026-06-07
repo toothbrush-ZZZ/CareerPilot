@@ -36,7 +36,7 @@ export function ChatWindow() {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--bg-base)' }}>
+    <div className="flex flex-col h-full" style={{ background: 'var(--cp-bg)' }}>
       <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
         {messages.map(msg => (
           <MessageBubble key={msg.id} message={msg} />
@@ -53,22 +53,19 @@ export function ChatWindow() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask anything… (Ctrl+Enter to send)"
-            className="w-full rounded-xl pl-4 pr-12 py-3.5 text-sm outline-none resize-none h-[80px] transition-all"
+            className="w-full rounded-xl pl-4 pr-12 py-3.5 text-sm outline-none resize-none h-[80px] transition-all border border-[var(--cp-border)] focus:border-[var(--cp-border-accent)]"
             style={{
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
+              background: 'var(--cp-card)',
+              color: 'var(--cp-text-primary)',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'var(--hud-blue)'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
             disabled={isTyping}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="absolute right-4 bottom-7 w-8 h-8 rounded-md bg-hud-blue text-white flex items-center justify-center hover:bg-hud-blue-dim transition-colors disabled:opacity-50"
+            className="absolute right-4 bottom-7 w-8 h-8 rounded-md flex items-center justify-center transition-colors disabled:opacity-50 hover:bg-[var(--cp-text-secondary)] bg-[var(--cp-text-primary)] text-[var(--cp-bg)]"
           >
-            <Send size={16} />
+            <Send size={16} strokeWidth={1.5} />
           </button>
           <p className="text-[10px] text-muted text-right mt-1">
             {cvUploaded ? '● CV context active' : '○ No CV — responses use generic profile'}

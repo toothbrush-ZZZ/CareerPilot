@@ -18,13 +18,8 @@ export function FitScore({ score, size = 48, showLabel = false, className }: Fit
     return () => clearTimeout(timer);
   }, [score]);
 
-  // Color by tier
-  const color = score >= 75 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626';
-  const glowColor = score >= 75
-    ? 'rgba(5,150,105,0.3)'
-    : score >= 50
-    ? 'rgba(217,119,6,0.3)'
-    : 'rgba(220,38,38,0.3)';
+  const color = score >= 75 ? 'var(--cp-accent)' : score >= 50 ? 'var(--cp-gold)' : 'var(--cp-danger)';
+  const glowColor = 'var(--cp-border-accent)';
 
   const strokeWidth = Math.max(2.5, size * 0.09);
   const radius = (size - strokeWidth) / 2;
@@ -37,16 +32,16 @@ export function FitScore({ score, size = 48, showLabel = false, className }: Fit
       style={{ width: size, height: size }}
     >
       <svg className="transform -rotate-90" width={size} height={size}>
-        {/* Track */}
+        
         <circle
           strokeWidth={strokeWidth}
-          stroke="var(--border)"
+          stroke="var(--cp-border)"
           fill="transparent"
           r={radius}
           cx={size / 2}
           cy={size / 2}
         />
-        {/* Progress arc */}
+        
         <circle
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
@@ -71,8 +66,8 @@ export function FitScore({ score, size = 48, showLabel = false, className }: Fit
       </div>
       {showLabel && (
         <span
-          className="text-[9px] uppercase tracking-widest mt-1.5 font-semibold"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-[11px] font-medium tracking-[-0.01em] mt-1.5"
+          style={{ color: 'var(--cp-text-muted)' }}
         >
           Fit
         </span>

@@ -23,8 +23,8 @@ export function TypingIndicator() {
         
         <div className="flex flex-col items-start">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-hud-blue border border-hud-blue/30 px-1.5 py-0.5 rounded bg-hud-blue/10">
-              HUD
+            <span className="text-[11px] font-medium tracking-[-0.01em] text-hud-blue border border-hud-blue/30 px-1.5 py-0.5 rounded bg-hud-blue/10">
+              Thinking
             </span>
           </div>
           
