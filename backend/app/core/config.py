@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET")
     @classmethod
     def jwt_secret_must_be_strong(cls, v: str) -> str:
+        if v == "careerpilot_jwt_secret_key_change_this_before_deploy_in_production":
+            raise ValueError(
+                "You are using the default JWT_SECRET placeholder! "
+                "You MUST change this in your .env file before deploying to production."
+            )
         if len(v) < 32:
             raise ValueError(
                 "JWT_SECRET must be at least 32 characters. "

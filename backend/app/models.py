@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date
-from sqlalchemy import String, Text, Boolean, DateTime, Date, ForeignKey
+from sqlalchemy import String, Text, Boolean, DateTime, Date, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -23,6 +23,8 @@ class Profile(Base):
 
     applications: Mapped[list["Application"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     goals: Mapped[list["Goal"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
+    skills: Mapped[list["Skill"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
+    milestones: Mapped[list["RoadmapMilestone"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
 
 
 class Application(Base):
@@ -34,6 +36,7 @@ class Application(Base):
     company: Mapped[str] = mapped_column(Text, nullable=False)
     location: Mapped[str | None] = mapped_column(Text, nullable=True)
     job_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    interview_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="applied")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -48,8 +51,48 @@ class Goal(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    target: Mapped[int] = mapped_column(Integer, default=0)
+    current: Mapped[int] = mapped_column(Integer, default=0)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     profile: Mapped["Profile"] = relationship(back_populates="goals")
+    tasks: Mapped[list["Task"]] = relationship(back_populates="goal", cascade="all, delete-orphan")
+
+
+class Skill(Base):
+    __tablename__ = "skills"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    profile: Mapped["Profile"] = relationship(back_populates="skills")
+
+
+class RoadmapMilestone(Base):
+    __tablename__ = "roadmap_milestones"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    profile: Mapped["Profile"] = relationship(back_populates="milestones")
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
+    goal_id: Mapped[str] = mapped_column(String, ForeignKey("goals.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    goal: Mapped["Goal"] = relationship(back_populates="tasks")

@@ -70,9 +70,18 @@ async def chat(
         
     config = types.GenerateContentConfig(**config_args)
     
-    response = await _gemini_client.aio.models.generate_content(
-        model='gemini-2.0-flash',
-        contents=contents,
-        config=config
-    )
-    return response.text
+    try:
+        response = await _gemini_client.aio.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=contents,
+            config=config
+        )
+        return response.text
+    except Exception as e:
+        logger.warning(f"[LLM] Gemini 2.0 Flash failed: {e}. Falling back to Gemini 1.5 Flash.")
+        response = await _gemini_client.aio.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=contents,
+            config=config
+        )
+        return response.text

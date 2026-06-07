@@ -33,6 +33,7 @@ async def get_applications(user: CurrentUser, db: AsyncSession = Depends(_get_db
             "notes": a.notes,
             "applied_at": a.applied_at.isoformat() if a.applied_at else None,
             "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+            "interview_date": a.interview_date.isoformat() if a.interview_date else None,
         }
         for a in apps
     ]
@@ -49,6 +50,7 @@ async def create_application(user: CurrentUser, data: ApplicationCreate, db: Asy
         job_url=data.job_url,
         status=data.status,
         notes=data.notes,
+        interview_date=data.interview_date,
     )
     db.add(app)
     await db.commit()
@@ -70,6 +72,8 @@ async def update_application(app_id: str, user: CurrentUser, data: ApplicationUp
         app.notes = data.notes
     if data.job_url is not None:
         app.job_url = data.job_url
+    if data.interview_date is not None:
+        app.interview_date = data.interview_date
     app.updated_at = datetime.utcnow()
 
     await db.commit()

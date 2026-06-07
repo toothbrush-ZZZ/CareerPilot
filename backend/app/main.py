@@ -9,12 +9,12 @@ from app.jobs.scraper import _executor  # FIX 6
 async def lifespan(app: FastAPI):
     await init_db()
     
-    # Auto-seed the demo user if not present
+    # Auto-seed the demo user on every startup to ensure a pristine state for the demo
     from app.core.database import AsyncSessionLocal
-    from app.services.seed_service import seed_demo_data
+    from app.services.seed_service import reset_demo_data
     try:
         async with AsyncSessionLocal() as session:
-            await seed_demo_data(session)
+            await reset_demo_data(session)
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Failed to auto-seed demo data on startup: {e}")

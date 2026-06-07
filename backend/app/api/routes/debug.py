@@ -24,7 +24,8 @@ async def reset_demo(user: CurrentUser):
 
 
 @router.post("/login-demo")
-async def login_demo(user: CurrentUser):
+async def login_demo():
+    """Public endpoint — returns a JWT for the demo account. No auth required."""
     from sqlalchemy import text
 
     async with AsyncSessionLocal() as db:
@@ -45,3 +46,4 @@ async def login_demo(user: CurrentUser):
         "token_type": "bearer",
         "user_id": DEMO_USER_ID,
     }
+

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +26,7 @@ async def _get_db() -> AsyncSession:
 
 class UserSignup(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8)
     full_name: Optional[str] = None
 
 
@@ -43,7 +43,7 @@ class TokenResponse(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
-    new_password: str
+    new_password: str = Field(..., min_length=8)
 
 
 class DeleteAccountRequest(BaseModel):

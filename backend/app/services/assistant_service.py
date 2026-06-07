@@ -45,9 +45,14 @@ async def chat(
         {"role": "user", "content": user_message},
     ]
 
-    reply = await llm_chat(
-        messages=messages,
-        max_tokens=1000,
-        temperature=0.7,
-    )
-    return reply
+    try:
+        reply = await llm_chat(
+            messages=messages,
+            max_tokens=1000,
+            temperature=0.7,
+        )
+        return reply
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Assistant LLM error: {e}")
+        return "I'm sorry, but I'm currently experiencing high traffic and have reached my strict API rate limit. Please give me a minute to cool down and try again!"
