@@ -11,7 +11,7 @@ graph TD
     U[👤 Active User]
 
     subgraph CDN ["Frontend CDN (Vercel / Cloudflare)"]
-        FE[Next.js 14 Web UI]
+        FE[Next.js 16 Web UI]
     end
 
     subgraph LoadBalancer ["Load Balancing Layer (AWS ALB / Nginx)"]
@@ -38,7 +38,7 @@ graph TD
     end
 
     subgraph ExternalAPI ["External AI & Scrape Targets"]
-        Groq[Groq Llama-3.3 Cloud API]
+        Groq[Groq Llama-3.1 Cloud API]
         Targets[LinkedIn / Indeed / Glassdoor Scrape]
     end
 
@@ -69,7 +69,7 @@ graph TD
 | **Session Cache** | In-memory Python `defaultdict` | Redis Cluster (AWS ElastiCache / Redis Labs) | In-memory sessions vanish on backend restarts and prevent horizontal scaling. Redis provides high-performance, persistent session storage across multiple backend instances. |
 | **Backend Servers** | Single Uvicorn worker process | FastAPI behind Gunicorn with multiple worker processes running on ECS/EKS | Horizontal auto-scaling based on CPU/Memory usage behind an Application Load Balancer. |
 | **Job Scraping** | Synchronous thread pool executor | Celery Workers + Redis Broker | Live scraping of LinkedIn/Indeed takes 5-15 seconds. Offloading scraping to background Celery workers prevents API blocking and handles burst loads gracefully. |
-| **AI LLM Calls** | Synchronous Groq Cloud calls | Async Groq client + retry queue + rate limiter | Implements token-bucket rate limiting to stay within Groq/LLM Tier limits, with fallbacks to alternative endpoints. |
+| **AI LLM Calls** | Direct Groq Cloud calls (no queuing/rate-limiting) | Async Groq client + retry queue + rate limiter | Implements token-bucket rate limiting to stay within Groq/LLM Tier limits, with fallbacks to alternative endpoints. |
 
 ---
 
@@ -80,13 +80,13 @@ Based on standard usage of **50 job searches, 100 AI assistant messages, and 2 C
 
 | Infrastructure Item | Service Provider | Monthly Cost Estimate (per 10k users) | Monthly Cost per User | Cost Driver & Assumptions |
 |---|---|---|---|---|
-| **LLM Inference** | Groq API (`llama-3.3-70b-versatile`) | $400.00 / 47,000 BDT | **$0.040 / 4.70 BDT** | Approx. 1,000,000 tokens per user/month (input + output). Groq tier cost is ~$0.59/M tokens. |
+| **LLM Inference** | Groq API (`llama-3.1-8b-instant`) | $65.00 / 7,638 BDT | **$0.0065 / 0.76 BDT** | Approx. 1,000,000 tokens per user/month (input + output). Groq tier cost is ~$0.06/M tokens. |
 | **Application Servers** | AWS ECS Fargate (2 instances, 1 vCPU, 2GB RAM) | $64.00 / 7,520 BDT | **$0.0064 / 0.75 BDT** | Continuous availability with horizontal scaling under peak hours. |
 | **Relational Database** | AWS RDS PostgreSQL (db.t4g.medium, Multi-AZ) | $75.00 / 8,813 BDT | **$0.0075 / 0.88 BDT** | High availability, automated backups, and 50GB SSD storage. |
 | **Vector Database** | Qdrant Cloud (Managed Cluster) | $45.00 / 5,288 BDT | **$0.0045 / 0.53 BDT** | 10,000 users × 100 chunks/user = 1M vectors. Standard memory footprint is under 4GB. |
 | **Cache & Queue** | AWS ElastiCache Redis (cache.t4g.small) | $32.00 / 3,760 BDT | **$0.0032 / 0.38 BDT** | Distributed session cache, Celery job queues, and job search result cache. |
 | **Static Hosting & CDN** | Vercel Pro Plan | $20.00 / 2,350 BDT | **$0.0020 / 0.24 BDT** | Hosting Next.js static files and API routing proxy. |
-| **Total Operating Cost** | | **$636.00 / 74,731 BDT** | **~$0.0636 / ~7.47 BDT / user / month** | **Extremely optimized, high-performance architecture.** |
+| **Total Operating Cost** | | **$301.00 / 35,368 BDT** | **~$0.0301 / ~3.54 BDT / user / month** | **Extremely optimized, high-performance architecture.** |
 
 ---
 
@@ -108,7 +108,7 @@ Based on standard usage of **50 job searches, 100 AI assistant messages, and 2 C
 
 ### Bottleneck 3: ChromaDB Filesystem Lock
 *   **The Issue:** ChromaDB running in-process writes directly to `./data/chroma`. Multiple concurrent write operations (e.g., several users uploading CVs simultaneously) will cause SQLite database locking errors.
-*   **Current Prototype Mitigation:** Graceful exception handling in `app/services/vector_store.py`. If a CV query or write operation fails due to filesystem locks, the system catches the error and degrades gracefully, allowing the personal assistant to answer without CV grounding rather than crashing the request.
+*   **Current Prototype Mitigation:** Exception handling in `app/services/vector_store.py`. If a CV **query** fails due to filesystem locks, the system catches the error and degrades gracefully, allowing the personal assistant to answer without CV grounding rather than crashing the request. CV **upload (write)** failures are surfaced as errors to the user, ensuring data integrity is not silently compromised.
 *   **Production Scaling Mitigation:**
     1.  Run ChromaDB in standalone Docker/server mode (`chroma run --host 0.0.0.0`) so connection handling and concurrency are managed natively by the ChromaDB service.
     2.  Transition to a dedicated vector database service (like **Qdrant Cloud**) or use `pgvector` inside the central PostgreSQL instance to maintain a single, highly concurrent data tier.
