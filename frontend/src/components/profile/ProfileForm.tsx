@@ -21,6 +21,10 @@ export function ProfileForm() {
   const [passMessage, setPassMessage] = useState('');
   const [isPassSuccess, setIsPassSuccess] = useState(false);
 
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState('');
+
   useEffect(() => {
     authService.getProfile().then((data) => {
       setFormData({
@@ -77,17 +81,29 @@ export function ProfileForm() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const password = window.prompt("WARNING: This action cannot be undone.\\nPlease enter your password to confirm account deletion:");
-    if (!password) return;
-    
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deletePassword) {
+      setDeleteMessage('Please enter your password to confirm deletion');
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you absolutely sure you want to delete your account? This action cannot be undone.");
+    if (!confirmDelete) return;
+
+    setDeleteLoading(true);
+    setDeleteMessage('');
     try {
-      await authService.deleteAccount(password);
+      await authService.deleteAccount(deletePassword);
       useAppStore.getState().logout();
-      alert("Account deleted. You will be redirected.");
-      window.location.href = "/";
+      setDeleteMessage("Account deleted. Redirecting...");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
     } catch (err: any) {
-      alert("Failed to delete account: " + (err.message || 'Incorrect password'));
+      setDeleteMessage(err.message || 'Incorrect password');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -259,7 +275,8 @@ export function ProfileForm() {
       >
         Danger Zone
       </h2>
-      <div
+      <form
+        onSubmit={handleDeleteAccount}
         className="flex flex-col gap-4"
         style={{
           background: 'var(--cp-surface)',
@@ -271,17 +288,49 @@ export function ProfileForm() {
         <p className="text-sm" style={{ color: 'var(--cp-text-secondary)' }}>
           Once you delete your account, there is no going back. Please be certain.
         </p>
-        <button
-          onClick={handleDeleteAccount}
-          className="px-4 py-2 rounded-[8px] text-[11px] font-semibold w-max transition-all hover:opacity-80"
-          style={{
-            background: 'var(--cp-danger)',
-            color: '#ffffff',
-          }}
+
+        <div className="flex flex-col gap-1.5 max-w-md">
+          <label
+            className="text-[11px] font-medium tracking-[-0.01em]"
+            style={{ color: 'var(--cp-text-secondary)' }}
+          >
+            Confirm Password
+          </label>
+          <input
+            type="password"
+            placeholder="Enter your password to confirm deletion"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            required
+            style={inputStyle}
+            onFocus={e => (e.target.style.borderColor = 'var(--cp-danger)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--cp-border)')}
+          />
+        </div>
+
+        <div
+          className="flex items-center justify-between mt-2 pt-4"
+          style={{ borderTop: '1px solid var(--cp-border)' }}
         >
-          Delete Account
-        </button>
-      </div>
+          <span
+            className="text-xs"
+            style={{ color: 'var(--cp-danger)', opacity: deleteMessage ? 1 : 0 }}
+          >
+            {deleteMessage || '​'}
+          </span>
+          <button
+            type="submit"
+            disabled={deleteLoading}
+            className="px-4 py-2 rounded-[8px] text-[11px] font-semibold transition-all hover:opacity-80 disabled:opacity-50"
+            style={{
+              background: 'var(--cp-danger)',
+              color: '#ffffff',
+            }}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete Account'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

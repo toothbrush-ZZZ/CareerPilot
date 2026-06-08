@@ -55,7 +55,8 @@ export function RadarLoader() {
 
         
         <motion.div
-          className="absolute w-[240px] h-[240px] rounded-full overflow-hidden origin-center"
+          className="absolute w-[220px] h-[220px] rounded-full overflow-hidden origin-center"
+          style={{ left: '10px', top: '10px' }}
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
         >
