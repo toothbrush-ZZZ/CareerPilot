@@ -6,6 +6,18 @@ interface Props {
   activity: number[]; // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const { count, fullName } = payload[0].payload;
+    return (
+      <div className="px-3 py-2 rounded-lg shadow-xl text-xs font-medium" style={{ background: 'var(--cp-surface)', border: '1px solid var(--cp-border)', color: 'var(--cp-text-primary)' }}>
+        {count} application{count !== 1 ? 's' : ''} — {fullName}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function WeeklyActivityChart({ activity }: Props) {
   const router = useRouter();
   
@@ -24,18 +36,6 @@ export function WeeklyActivityChart({ activity }: Props) {
   }));
 
   const total = activity.reduce((a, b) => a + b, 0);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const { count, fullName } = payload[0].payload;
-      return (
-        <div className="px-3 py-2 rounded-lg shadow-xl text-xs font-medium" style={{ background: 'var(--cp-surface)', border: '1px solid var(--cp-border)', color: 'var(--cp-text-primary)' }}>
-          {count} application{count !== 1 ? 's' : ''} — {fullName}
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="flex flex-col h-full rounded-xl p-5" style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>

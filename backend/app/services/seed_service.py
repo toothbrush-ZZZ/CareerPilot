@@ -80,7 +80,6 @@ async def seed_demo_data(db) -> bool:
                 }
             )
             
-            import uuid
             from datetime import timedelta
             eight_days_ago = datetime.utcnow() - timedelta(days=8)
             await db.execute(
