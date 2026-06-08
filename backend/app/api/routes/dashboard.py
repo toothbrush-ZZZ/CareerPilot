@@ -237,7 +237,7 @@ async def get_dashboard_stats(user: CurrentUser, db: AsyncSession = Depends(_get
                         "copy": nudge_copy,
                         "sub_copy": "Here are openings matching your profile:",
                         "jobs": [
-                            {"title": j.get("title", ""), "company": j.get("company", ""), "job_id": j.get("id", "xyz"), "job_url": j.get("job_url", "")} 
+                            {"title": j.get("title", ""), "company": j.get("company", ""), "job_id": j.get("id", "xyz"), "job_url": j.get("url", "")} 
                             for j in recent_jobs[:3]
                         ]
                     }

@@ -34,6 +34,33 @@ EDUCATION
 - B.S. in Computer Science from Stanford University (2017 - 2021)
 """
 
+async def cleanup_user_data(db, user_id: str) -> None:
+    """Clean up database tables, vector database collection, and uploaded files for a user ID."""
+    for table in ["applications", "tasks", "goals", "skills", "roadmap_milestones"]:
+        await db.execute(
+            text(f"DELETE FROM {table} WHERE user_id = :uid"),
+            {"uid": user_id}
+        )
+    await db.execute(
+        text("DELETE FROM profiles WHERE id = :uid"),
+        {"uid": user_id}
+    )
+    
+    # Clean up ChromaDB collection
+    from app.services.vector_store import delete_cv
+    try:
+        delete_cv(user_id)
+    except Exception as cv_err:
+        logger.warning(f"Error cleaning up CV collection for user {user_id}: {cv_err}")
+
+    # Clean up upload directory
+    user_dir = f"uploads/{user_id}"
+    if os.path.exists(user_dir):
+        try:
+            shutil.rmtree(user_dir)
+        except Exception as file_err:
+            logger.warning(f"Error cleaning up upload directory for user {user_id}: {file_err}")
+
 async def seed_demo_data(db) -> bool:
     try:
         try:
@@ -51,10 +78,7 @@ async def seed_demo_data(db) -> bool:
             existing_id = email_row[0]
             if existing_id != DEMO_USER_ID:
                 logger.info(f"Demo user exists with different ID {existing_id}. Deleting to re-seed...")
-                await db.execute(
-                    text("DELETE FROM profiles WHERE id = :uid"),
-                    {"uid": existing_id}
-                )
+                await cleanup_user_data(db, existing_id)
                 await db.flush()
 
         result = await db.execute(
@@ -124,46 +148,8 @@ async def seed_demo_data(db) -> bool:
 async def reset_demo_data(db) -> bool:
     try:
         logger.info("Resetting demo data...")
-
-        await db.execute(
-            text("DELETE FROM applications WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        await db.execute(
-            text("DELETE FROM tasks WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        await db.execute(
-            text("DELETE FROM goals WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        await db.execute(
-            text("DELETE FROM skills WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        await db.execute(
-            text("DELETE FROM roadmap_milestones WHERE user_id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
-        await db.execute(
-            text("DELETE FROM profiles WHERE id = :uid"),
-            {"uid": DEMO_USER_ID}
-        )
+        await cleanup_user_data(db, DEMO_USER_ID)
         await db.commit()
-
-        # Clean up ChromaDB collection
-        from app.services.vector_store import delete_cv
-        try:
-            delete_cv(DEMO_USER_ID)
-        except Exception as cv_err:
-            logger.error(f"Error cleaning up demo CV collection: {cv_err}")
-
-        user_dir = f"uploads/{DEMO_USER_ID}"
-        if os.path.exists(user_dir):
-            try:
-                shutil.rmtree(user_dir)
-            except Exception as file_err:
-                logger.error(f"Error cleaning up demo upload directory: {file_err}")
 
         success = await seed_demo_data(db)
         return success
@@ -171,3 +157,4 @@ async def reset_demo_data(db) -> bool:
         await db.rollback()
         logger.error(f"Error resetting demo data: {e}")
         return False
+

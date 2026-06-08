@@ -3,9 +3,6 @@ from app.services.seed_service import DEMO_USER_ID, DEMO_EMAIL, reset_demo_data
 from app.services import auth_service
 from app.middleware.auth import CurrentUser
 from app.core.database import AsyncSessionLocal
-import logging
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 

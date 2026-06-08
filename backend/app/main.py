@@ -55,7 +55,7 @@ async def health():
     return {"status": "ok"}
 
 
-from app.api.routes import profile, cv, jobs, tracker, dashboard, auth
+from app.api.routes import profile, cv, jobs, tracker, dashboard, auth, debug
 from app.api import assistant
 
 app.include_router(auth.router, prefix="/api/v1")
@@ -65,3 +65,4 @@ app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(tracker.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(assistant.router, prefix="/api/v1")
+app.include_router(debug.router, prefix="/api/v1")
