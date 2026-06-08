@@ -22,15 +22,15 @@ CareerPilot helps users manage their job search by combining CV parsing and retr
 
 - Frontend: Next.js, TypeScript, Tailwind CSS
 - Backend: FastAPI, SQLite, ChromaDB (in-process)
-- AI: Groq (LLM) for scoring and assistant responses
-- Job scraping: python-jobspy (integrated scraper)
+- AI: Resilient LLM Routing (Groq ➔ Gemini ➔ OpenRouter fallback)
+- Job scraping: python-jobspy (parallel scraper engine)
 
 ## 📖 Running the Application (Manual)
 
 ### Prerequisites
 - **Docker** and **Docker Compose** (for Method 1)
 - **Node.js** (v18+) and **Python** (3.10+) (for Method 2)
-- A free API key from [console.groq.com](https://console.groq.com)
+- API keys for **Groq**, **Gemini**, or **OpenRouter** (for LLM services and fallbacks)
 
 ### Method 1: Running with Docker (Recommended)
 This is the fastest way to get the entire stack running.
@@ -39,7 +39,7 @@ This is the fastest way to get the entire stack running.
    ```bash
    cp .env.example .env
    ```
-   Open the `.env` file and fill in your `GROQ_API_KEY`. You can also set a random `JWT_SECRET`.
+    Open the `.env` file and fill in your API keys (e.g. `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`) and set a `JWT_SECRET`.
 
 2. **Start the application:**
    ```bash
@@ -90,12 +90,12 @@ If you prefer to run the services directly on your machine for active developmen
 - Backend: FastAPI
 - Database: SQLite + aiosqlite
 - Vector DB: ChromaDB (on-disk persistence)
-- AI provider: Groq
+- AI provider: Groq, Gemini (GenAI SDK), and OpenRouter
 - CV parsing: pdfplumber + python-docx
 
 ## 🧪 Evaluation Suite
 
-8 documented test cases covering all four pillars. See [evals/TEST_CASES.md](./evals/TEST_CASES.md).
+10 documented test cases covering all four pillars and core technical requirements. See [evals/test_cases.md](./evals/test_cases.md).
 
 To run automated checks:
 
@@ -119,9 +119,4 @@ python evals/run_evals.py
 
 ## 📐 System Design
 
-See [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) for the architecture diagram, scaling analysis (0→100→1k→10k users), cost estimates (~$0.01/user/month at scale), and bottleneck mitigations.
-
-## 📋 API Reference
-
-See [API.md](./API.md) for the full endpoint reference. Interactive Swagger docs are available at `$BACKEND_URL/docs` when the backend is running.
-
+See [SYSTEM_DESIGN.md](./SYSTEM_DESIGN.md) for the architecture details, scaling analysis (0 to 10k users), cost estimates (~7.47 BDT / $0.0636 per user/month at scale), and current/production bottleneck mitigations.
