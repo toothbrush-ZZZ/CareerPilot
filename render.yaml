@@ -1,0 +1,32 @@
+services:
+  # Backend FastAPI service
+  - type: web
+    name: careerpilot-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./data/careerpilot.db
+      - key: CORS_ORIGINS
+        value: https://careerpilot-frontend-0kxs.onrender.com,http://localhost:3000
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  # Frontend Next.js service
+  - type: web
+    name: careerpilot-frontend
+    runtime: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://careerpilot-backend-8zry.onrender.com

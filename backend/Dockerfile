@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
 
 # ChromaDB hardcodes Path.home()/.cache/chroma as its model download path.
 # By setting HOME=/app at build time, it downloads to /app/.cache/chroma
