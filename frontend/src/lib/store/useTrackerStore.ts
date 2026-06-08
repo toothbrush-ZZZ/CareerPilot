@@ -31,12 +31,14 @@ interface TrackerState {
   addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
   toggleGoal: (id: string) => Promise<void>;
   removeGoal: (id: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useTrackerStore = create<TrackerState>((set, get) => ({
   columns: INITIAL_COLUMNS,
   goals: [],
   isLoading: false,
+  reset: () => set({ columns: INITIAL_COLUMNS, goals: [], isLoading: false }),
 
   loadData: async (force = false) => {
     const state = get();

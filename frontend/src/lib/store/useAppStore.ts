@@ -35,10 +35,16 @@ export const useAppStore = create<AppState>()(
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       isAuthenticated: false,
       login: (token, profile) => {
-        set({ user: profile, token, isAuthenticated: true });
+        import('./useDashboardStore').then(m => m.useDashboardStore.getState().reset?.());
+        import('./useTrackerStore').then(m => m.useTrackerStore.getState().reset?.());
+        import('./useJobStore').then(m => m.useJobStore.getState().reset?.());
+        set({ user: profile, token, isAuthenticated: true, cvUploaded: false });
       },
       logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+        import('./useDashboardStore').then(m => m.useDashboardStore.getState().reset?.());
+        import('./useTrackerStore').then(m => m.useTrackerStore.getState().reset?.());
+        import('./useJobStore').then(m => m.useJobStore.getState().reset?.());
+        set({ user: null, token: null, isAuthenticated: false, cvUploaded: false });
       },
       cvUploaded: false,
       setCvUploaded: (v) => set({ cvUploaded: v }),

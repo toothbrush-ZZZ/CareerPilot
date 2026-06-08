@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Terminal, Flame, Bell, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Terminal, Flame, Bell, RefreshCw, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useDashboardStore } from '@/lib/store/useDashboardStore';
 import { useTrackerStore } from '@/lib/store/useTrackerStore';
 import { useJobStore } from '@/lib/store/useJobStore';
+import { NudgeCard } from '@/components/dashboard/NudgeCard';
 
 export function StatusHood() {
   const { cvUploaded, initStore } = useAppStore();
   const { stats, loadData: loadDash } = useDashboardStore();
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showNudge, setShowNudge] = useState(false);
   
   const streak = stats?.streak_counter || 0;
 
@@ -114,19 +116,39 @@ export function StatusHood() {
           <RefreshCw size={16} strokeWidth={1.5} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
 
-        <Link
-          href="/dashboard?tab=overview"
-          className="relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-[var(--cp-surface)]"
-          style={{ color: 'var(--cp-text-muted)' }}
-        >
-          <Bell size={16} strokeWidth={1.5} />
-          {stats?.nudge && (
-            <span 
-              className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ background: 'var(--cp-accent)', boxShadow: '0 0 6px var(--cp-accent)' }}
-            />
+        <div className="relative">
+          <button
+            onClick={() => setShowNudge(!showNudge)}
+            className="relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-[var(--cp-surface)]"
+            style={{ color: 'var(--cp-text-muted)' }}
+          >
+            <Bell size={16} strokeWidth={1.5} />
+            {stats?.nudge && (
+              <span 
+                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                style={{ background: 'var(--cp-accent)', boxShadow: '0 0 6px var(--cp-accent)' }}
+              />
+            )}
+          </button>
+          {showNudge && (
+            <div className="absolute right-0 top-full mt-2 w-[320px] shadow-2xl z-50">
+              <NudgeCard nudge={stats?.nudge || null} />
+            </div>
           )}
-        </Link>
+        </div>
+
+        <button
+          onClick={() => {
+            import('@/lib/utils/api').then(({ setAuthToken }) => setAuthToken(''));
+            useAppStore.getState().logout();
+            router.push('/');
+          }}
+          className="relative flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-red-500/10"
+          style={{ color: 'var(--cp-text-muted)' }}
+          title="Logout"
+        >
+          <LogOut size={16} strokeWidth={1.5} className="hover:text-[var(--cp-danger)] transition-colors" />
+        </button>
       </div>
     </div>
   );

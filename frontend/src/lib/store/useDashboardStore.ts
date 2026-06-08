@@ -7,11 +7,13 @@ interface DashboardState {
   stats: DashboardStats | null;
   isLoading: boolean;
   loadData: (force?: boolean) => Promise<void>;
+  reset: () => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   stats: null,
   isLoading: false,
+  reset: () => set({ stats: null, isLoading: false }),
 
   loadData: async (force = false) => {
     const { stats } = get();

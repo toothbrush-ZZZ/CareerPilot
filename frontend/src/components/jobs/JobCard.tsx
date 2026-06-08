@@ -107,9 +107,9 @@ export function JobCard({ job }: JobCardProps) {
             >
               <p
                 className="text-[11px] font-medium tracking-[-0.01em] mb-2"
-                style={{ color: 'var(--cp-text-muted)' }}
+                style={{ color: job.fitScore === 0 ? 'var(--cp-danger)' : 'var(--cp-text-muted)' }}
               >
-                Why this matches your profile
+                {job.fitScore === 0 ? 'Fit Analysis Unavailable - Rate Limit Exceeded' : 'Why this matches your profile'}
               </p>
               <p
                 className="text-sm leading-relaxed"

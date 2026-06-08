@@ -72,6 +72,8 @@ export function CalendarView() {
             const hasGoals = dayGoals.length > 0;
             const hasIncompleteGoals = dayGoals.some(g => !g.completed);
             
+            const colIndex = (firstDayOfMonth + i) % 7;
+            
             return (
               <div 
                 key={day} 
@@ -88,7 +90,11 @@ export function CalendarView() {
                 </div>
                 
                 {hasGoals && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col pb-1.5 z-[100]">
+                  <div className={`absolute bottom-full ${
+                    colIndex === 0 ? 'left-0' :
+                    colIndex === 6 ? 'right-0' :
+                    'left-1/2 -translate-x-1/2'
+                  } hidden group-hover:flex flex-col pb-1.5 z-[100]`}>
                     <div className="flex flex-col gap-2 p-4 rounded-xl shadow-xl w-max max-w-[280px]"
                          style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
                       <div className="text-sm font-bold text-[var(--cp-text-muted)] mb-1 uppercase tracking-wider text-center">

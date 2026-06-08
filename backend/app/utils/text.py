@@ -187,14 +187,26 @@ def cv_builder_to_text(data: Dict) -> str:
         
     if data.get("experience"):
         lines.append("\nEXPERIENCE")
-        for exp in data["experience"]:
-            lines.append(f"{exp.get('role')} at {exp.get('company')} ({exp.get('start_date')} - {exp.get('end_date')})")
-            lines.append(exp.get("description", ""))
+        if isinstance(data["experience"], list):
+            for exp in data["experience"]:
+                if isinstance(exp, dict):
+                    lines.append(f"{exp.get('role')} at {exp.get('company')} ({exp.get('start_date')} - {exp.get('end_date')})")
+                    lines.append(exp.get("description", ""))
+                else:
+                    lines.append(str(exp))
+        else:
+            lines.append(str(data["experience"]))
             
     if data.get("education"):
         lines.append("\nEDUCATION")
-        for edu in data["education"]:
-            lines.append(f"{edu.get('degree')} in {edu.get('field')} - {edu.get('institution')}")
+        if isinstance(data["education"], list):
+            for edu in data["education"]:
+                if isinstance(edu, dict):
+                    lines.append(f"{edu.get('degree')} in {edu.get('field')} - {edu.get('institution')}")
+                else:
+                    lines.append(str(edu))
+        else:
+            lines.append(str(data["education"]))
             
     if data.get("skills"):
         lines.append("\nSKILLS")
@@ -213,8 +225,14 @@ def cv_builder_to_text(data: Dict) -> str:
 
     if data.get("projects"):
         lines.append("\nPROJECTS")
-        for proj in data["projects"]:
-            lines.append(f"{proj.get('name')}: {proj.get('description')}")
+        if isinstance(data["projects"], list):
+            for proj in data["projects"]:
+                if isinstance(proj, dict):
+                    lines.append(f"{proj.get('name')}: {proj.get('description')}")
+                else:
+                    lines.append(str(proj))
+        else:
+            lines.append(str(data["projects"]))
             
     if data.get("certifications"):
         lines.append("\nCERTIFICATIONS")

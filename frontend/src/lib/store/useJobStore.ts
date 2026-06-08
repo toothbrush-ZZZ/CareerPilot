@@ -14,6 +14,7 @@ interface JobState {
   setSelectedJob: (job: Job | null) => void;
   setFilters: (f: Partial<JobFilters>) => void;
   searchJobs: (force?: boolean) => Promise<void>;
+  reset: () => void;
 }
 
 export const useJobStore = create<JobState>((set, get) => ({
@@ -22,6 +23,7 @@ export const useJobStore = create<JobState>((set, get) => ({
   isSearching: false,
   selectedJob: null,
   filters: {},
+  reset: () => set({ query: '', jobs: [], isSearching: false, selectedJob: null, filters: {} }),
   setQuery: (q) => set({ query: q }),
   setIsSearching: (v) => set({ isSearching: v }),
   setSelectedJob: (job) => set({ selectedJob: job }),

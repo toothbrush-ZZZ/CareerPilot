@@ -83,6 +83,7 @@ export function ProfileForm() {
     
     try {
       await authService.deleteAccount(password);
+      useAppStore.getState().logout();
       alert("Account deleted. You will be redirected.");
       window.location.href = "/";
     } catch (err: any) {

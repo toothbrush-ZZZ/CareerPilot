@@ -106,23 +106,6 @@ export function CommandDock() {
 
         <div className="w-px h-8 bg-[var(--cp-border)] mx-1" />
 
-        <button
-          onClick={() => {
-            setAuthToken('');
-            useAppStore.getState().logout();
-            router.push('/');
-          }}
-          className="relative flex flex-col items-center gap-1 px-3.5 sm:px-4 py-2.5 rounded-xl transition-all outline-none group focus-visible:ring-2 text-[var(--cp-text-muted)] hover:text-[var(--cp-danger)]"
-          title="Logout"
-        >
-          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-red-500/10" />
-          <div className="relative z-10 flex flex-col items-center gap-1">
-            <LogOut size={24} className="transition-transform duration-150 group-hover:scale-110" strokeWidth={1.5} />
-            <span className="bottom-nav__label transition-colors duration-150 group-hover:text-red-500">
-              Logout
-            </span>
-          </div>
-        </button>
       </nav>
     </div>
   );
