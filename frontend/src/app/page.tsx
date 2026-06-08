@@ -6,19 +6,21 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { authService, setAuthToken } from '@/lib/utils/api';
 import { Compass, Sparkles, ArrowRight, LogIn, Briefcase, ClipboardList, MessageSquareCode } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function LandingPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAppStore();
+  const { login, isAuthenticated, hasHydrated } = useAppStore();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
-    if (isAuthenticated) {
+    if (hasHydrated && isAuthenticated) {
       router.push('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Show nothing while hydrating to prevent flash
+  if (!hasHydrated) return null;
 
 
   return (
@@ -43,7 +45,8 @@ export default function LandingPage() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {mounted && isAuthenticated ? (
+          <ThemeToggle />
+          {isAuthenticated ? (
             <Link
               href="/dashboard"
               className="flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all"
@@ -89,7 +92,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-base md:text-lg max-w-2xl mt-6 leading-relaxed font-medium" style={{ color: 'var(--cp-text-secondary)' }}>
-          Navigate the job market with real-time opportunities, intelligent insights, and an AI copilot built to help you reach your next destination.
+          Personalized insights, smart job matching, and tools designed for career growth to build your future with confidence.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
@@ -155,7 +158,7 @@ export default function LandingPage() {
         className="relative z-10 py-8 text-center text-xs w-full mx-auto px-6 md:px-12"
         style={{ color: 'var(--cp-text-muted)', borderTop: '1px solid var(--cp-border)' }}
       >
-        CareerPilot SaaS &bull; Dedicated AI Stack 2026.
+        CareerPilot Platform &bull; Dedicated AI Stack 2026.
       </footer>
     </div>
   );

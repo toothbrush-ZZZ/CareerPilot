@@ -26,7 +26,7 @@ export function CommandDock() {
       <nav
         className="relative flex items-center gap-0.5 sm:gap-1 px-2 py-2 rounded-2xl shadow-xl"
         style={{
-          background: 'rgba(10,10,10,0.92)',
+          background: 'var(--cp-bg-alpha)',
           border: '1px solid var(--cp-border)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
@@ -103,9 +103,6 @@ export function CommandDock() {
             </button>
           );
         })}
-
-        <div className="w-px h-8 bg-[var(--cp-border)] mx-1" />
-
       </nav>
     </div>
   );

@@ -47,25 +47,6 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return response;
 }
 
-export async function initAuth(): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'demo@careerpilot.ai',
-        password: 'demopassword'
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setAuthToken(data.access_token);
-    }
-  } catch (error) {
-    // Backend not reachable
-  }
-}
 
 export const authService = {
   login: async (email: string, password: string) => {
@@ -207,7 +188,6 @@ export async function uploadCV(file: File): Promise<{ sections: CVSection[]; ski
 
 export async function getCVStatus(): Promise<{ has_cv: boolean; chunk_count: number }> {
   const response = await fetchWithAuth('/cv/status');
-  if (!response.ok) return { has_cv: false, chunk_count: 0 };
   return await response.json();
 }
 

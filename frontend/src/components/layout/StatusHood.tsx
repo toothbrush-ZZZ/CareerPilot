@@ -9,7 +9,7 @@ import { useDashboardStore } from '@/lib/store/useDashboardStore';
 import { useTrackerStore } from '@/lib/store/useTrackerStore';
 import { useJobStore } from '@/lib/store/useJobStore';
 import { NudgeCard } from '@/components/dashboard/NudgeCard';
-
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 export function StatusHood() {
   const { cvUploaded, initStore } = useAppStore();
   const { stats, loadData: loadDash } = useDashboardStore();
@@ -47,7 +47,7 @@ export function StatusHood() {
     <div
       className="fixed top-0 left-0 w-full h-14 z-50 flex items-center justify-between px-4 sm:px-6"
       style={{
-        background: 'rgba(10,10,10,0.92)',
+        background: 'var(--cp-bg-alpha)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         boxShadow: '0 1px 0 var(--cp-border)',
@@ -88,12 +88,14 @@ export function StatusHood() {
           className="font-mono text-[10px] tracking-widest hidden lg:inline-block"
           style={{ color: 'var(--cp-text-muted)', opacity: 0.6 }}
         >
-          {`// Mission runtime`}
+          {`Your Career Command Center`}
         </span>
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
         
+        <ThemeToggle />
+
         <div
           className="flex items-center gap-1.5 px-2 py-1 rounded-md font-mono text-[10px] sm:text-xs font-bold transition-all duration-300 hover:scale-105 cursor-default"
           style={{

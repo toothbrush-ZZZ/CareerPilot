@@ -99,8 +99,8 @@ export interface DashboardStats {
     copy: string; 
     sub_copy: string; 
     jobs: Array<{ title: string; company: string; job_id: string; job_url?: string }>;
-    cta_label: string;
-    cta_url: string;
+    cta_label?: string;
+    cta_url?: string;
   } | null;
 }
 

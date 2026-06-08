@@ -85,6 +85,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
       {isRejected && hasDetails && (
         <button 
           onClick={(e) => { e.stopPropagation(); setUserExpanded(!userExpanded); }}
+          onPointerDown={(e) => e.stopPropagation()}
           className="flex items-center gap-1 text-[10px] font-semibold text-[var(--cp-text-muted)] hover:text-[var(--cp-accent)] transition-colors mb-1"
         >
           {userExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -95,7 +96,14 @@ export function KanbanCard({ card }: KanbanCardProps) {
       {isExpanded && hasDetails && (
         <div className="mt-auto pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--cp-border)' }}>
           {card.jobUrl && (
-            <a href={card.jobUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-medium hover:underline w-fit" style={{ color: 'var(--cp-accent)' }}>
+            <a 
+              href={card.jobUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onPointerDown={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-[11px] font-medium hover:underline w-fit" 
+              style={{ color: 'var(--cp-accent)' }}
+            >
               View Job <ExternalLink size={12} strokeWidth={1.5} />
             </a>
           )}

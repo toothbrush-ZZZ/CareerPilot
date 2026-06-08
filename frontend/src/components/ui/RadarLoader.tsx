@@ -25,16 +25,32 @@ export function RadarLoader() {
       <div className="relative w-[240px] h-[240px] flex items-center justify-center">
         
         <svg width="240" height="240" className="absolute inset-0">
-          <circle cx="120" cy="120" r="40" stroke="var(--color-hud-blue)" strokeWidth="1" fill="none" opacity="0.2" />
-          <circle cx="120" cy="120" r="70" stroke="var(--color-hud-blue)" strokeWidth="1" fill="none" opacity="0.2" />
-          <circle cx="120" cy="120" r="100" stroke="var(--color-hud-blue)" strokeWidth="1" fill="none" opacity="0.2" />
+          {/* Concentric Radar Rings */}
+          <circle cx="120" cy="120" r="35" stroke="var(--cp-accent)" strokeWidth="1" fill="none" opacity="0.15" />
+          <circle cx="120" cy="120" r="60" stroke="var(--cp-accent)" strokeWidth="1" fill="none" opacity="0.15" />
+          <circle cx="120" cy="120" r="85" stroke="var(--cp-accent)" strokeWidth="1" strokeDasharray="4 4" fill="none" opacity="0.15" />
+          <circle cx="120" cy="120" r="110" stroke="var(--cp-accent)" strokeWidth="1" fill="none" opacity="0.25" />
           
+          {/* Grid lines (Crosshairs & Diagonals) */}
+          <line x1="120" y1="10" x2="120" y2="230" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.15" />
+          <line x1="10" y1="120" x2="230" y2="120" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.15" />
+          <line x1="42" y1="42" x2="198" y2="198" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.08" strokeDasharray="2 2" />
+          <line x1="198" y1="42" x2="42" y2="198" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.08" strokeDasharray="2 2" />
           
-          <line x1="120" y1="10" x2="120" y2="230" stroke="var(--color-hud-blue)" strokeWidth="1" opacity="0.1" />
-          <line x1="10" y1="120" x2="230" y2="120" stroke="var(--color-hud-blue)" strokeWidth="1" opacity="0.1" />
+          {/* Measuring Ticks along horizontal crosshair */}
+          <line x1="60" y1="117" x2="60" y2="123" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="90" y1="117" x2="90" y2="123" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="150" y1="117" x2="150" y2="123" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="180" y1="117" x2="180" y2="123" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
           
+          {/* Measuring Ticks along vertical crosshair */}
+          <line x1="117" y1="60" x2="123" y2="60" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="117" y1="90" x2="123" y2="90" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="117" y1="150" x2="123" y2="150" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
+          <line x1="117" y1="180" x2="123" y2="180" stroke="var(--cp-accent)" strokeWidth="1" opacity="0.25" />
           
-          <circle cx="120" cy="120" r="3" fill="var(--color-hud-blue)" />
+          {/* Center Point */}
+          <circle cx="120" cy="120" r="3" fill="var(--cp-accent)" />
         </svg>
 
         
@@ -52,11 +68,11 @@ export function RadarLoader() {
             }}
           />
           
-          <div className="absolute top-0 left-1/2 w-[1px] h-1/2 bg-hud-blue origin-bottom" />
+          <div className="absolute top-0 left-1/2 w-[1px] h-1/2 bg-accent origin-bottom" />
         </motion.div>
       </div>
 
-      <div className="mt-8 font-mono text-sm text-hud-blue animate-pulse">
+      <div className="mt-8 font-mono text-sm text-accent animate-pulse">
         {MESSAGES[msgIndex]}
       </div>
     </div>

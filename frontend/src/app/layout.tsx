@@ -23,7 +23,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased text-sm overflow-hidden relative`}
         style={{ background: 'var(--cp-bg)', color: 'var(--cp-text-primary)' }}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" storageKey="careerpilot-theme" enableSystem={false} disableTransitionOnChange>
           <BackgroundCanvas />
 
           

@@ -22,21 +22,21 @@ export function PulseLoader({ size = 48, className }: PulseLoaderProps) {
       style={{ width: size, height: size }}
     >
       <motion.div
-        className="absolute rounded-full border-2 border-hud-blue"
+        className="absolute rounded-full border-2 border-accent"
         style={{ width: size * 0.8, height: size * 0.8 }}
         initial={{ scale: 0.8, opacity: 1 }}
         animate={{ scale: 1.4, opacity: 0 }}
         transition={{ ...transition, delay: 0 }}
       />
       <motion.div
-        className="absolute rounded-full border-2 border-hud-blue"
+        className="absolute rounded-full border-2 border-accent"
         style={{ width: size * 0.8, height: size * 0.8 }}
         initial={{ scale: 0.8, opacity: 1 }}
         animate={{ scale: 1.4, opacity: 0 }}
         transition={{ ...transition, delay: 0.7 }}
       />
       
-      <div className="absolute w-2 h-2 rounded-full bg-hud-blue" />
+      <div className="absolute w-2 h-2 rounded-full bg-accent" />
     </div>
   );
 }

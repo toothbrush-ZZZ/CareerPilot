@@ -190,9 +190,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                     placeholder="Role"
                     value={exp.role}
                     onChange={(e) => {
-                      const newExp = [...experiences];
-                      newExp[idx].role = e.target.value;
-                      setExperiences(newExp);
+                      setExperiences(prev => prev.map((exp, i) => i === idx ? { ...exp, role: e.target.value } : exp));
                     }}
                     className="bg-transparent text-sm outline-none flex-[2] w-full min-w-0"
                   />
@@ -201,9 +199,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                     placeholder="Company"
                     value={exp.company}
                     onChange={(e) => {
-                      const newExp = [...experiences];
-                      newExp[idx].company = e.target.value;
-                      setExperiences(newExp);
+                      setExperiences(prev => prev.map((exp, i) => i === idx ? { ...exp, company: e.target.value } : exp));
                     }}
                     className="bg-transparent text-sm outline-none flex-[1] w-full min-w-0"
                   />
@@ -212,9 +208,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                     placeholder="Duration (e.g. 2020-2023)"
                     value={exp.duration}
                     onChange={(e) => {
-                      const newExp = [...experiences];
-                      newExp[idx].duration = e.target.value;
-                      setExperiences(newExp);
+                      setExperiences(prev => prev.map((exp, i) => i === idx ? { ...exp, duration: e.target.value } : exp));
                     }}
                     className="bg-transparent text-sm outline-none flex-[1.5] w-full min-w-0 pr-6 sm:pr-0"
                   />
@@ -250,9 +244,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                     placeholder="Project Title"
                     value={proj.title}
                     onChange={(e) => {
-                      const newProj = [...projects];
-                      newProj[idx].title = e.target.value;
-                      setProjects(newProj);
+                      setProjects(prev => prev.map((p, i) => i === idx ? { ...p, title: e.target.value } : p));
                     }}
                     className="bg-transparent text-sm outline-none flex-1 w-full sm:w-1/3 min-w-0"
                   />
@@ -261,9 +253,7 @@ export function CVUploader({ onUploadComplete }: CVUploaderProps) {
                     placeholder="Short Description"
                     value={proj.description}
                     onChange={(e) => {
-                      const newProj = [...projects];
-                      newProj[idx].description = e.target.value;
-                      setProjects(newProj);
+                      setProjects(prev => prev.map((p, i) => i === idx ? { ...p, description: e.target.value } : p));
                     }}
                     className="bg-transparent text-sm outline-none flex-1 w-full sm:w-2/3 min-w-0 pr-6 sm:pr-0"
                   />

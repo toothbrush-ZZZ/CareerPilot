@@ -23,6 +23,8 @@ interface AppState {
   addToast: (toast: Omit<Toast, 'id'> & { id?: string }) => void;
   removeToast: (id: string) => void;
   initStore: () => Promise<void>;
+  hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -38,12 +40,14 @@ export const useAppStore = create<AppState>()(
         import('./useDashboardStore').then(m => m.useDashboardStore.getState().reset?.());
         import('./useTrackerStore').then(m => m.useTrackerStore.getState().reset?.());
         import('./useJobStore').then(m => m.useJobStore.getState().reset?.());
+        import('./useAssistantStore').then(m => m.useAssistantStore.getState().reset?.());
         set({ user: profile, token, isAuthenticated: true, cvUploaded: false });
       },
       logout: () => {
         import('./useDashboardStore').then(m => m.useDashboardStore.getState().reset?.());
         import('./useTrackerStore').then(m => m.useTrackerStore.getState().reset?.());
         import('./useJobStore').then(m => m.useJobStore.getState().reset?.());
+        import('./useAssistantStore').then(m => m.useAssistantStore.getState().reset?.());
         set({ user: null, token: null, isAuthenticated: false, cvUploaded: false });
       },
       cvUploaded: false,
@@ -68,11 +72,16 @@ export const useAppStore = create<AppState>()(
         } catch {
           // ignore
         }
-      }
+      },
+      hasHydrated: false,
+      setHasHydrated: (v) => set({ hasHydrated: v })
     }),
     {
       name: 'careerpilot-storage',
-      partialize: (state) => ({ theme: state.theme, user: state.user, token: state.token, isAuthenticated: state.isAuthenticated })
+      partialize: (state) => ({ theme: state.theme, user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      }
     }
   )
 );

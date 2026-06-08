@@ -9,7 +9,7 @@ import { Compass, Mail, Lock, ArrowRight, Eye, EyeOff, LogIn } from 'lucide-reac
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAppStore();
+  const { login, isAuthenticated, hasHydrated } = useAppStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,10 +17,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   React.useEffect(() => {
-    if (useAppStore.getState().isAuthenticated) {
+    if (hasHydrated && isAuthenticated) {
       router.push('/dashboard');
     }
-  }, [router]);
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Show nothing while hydrating to prevent flash
+  if (!hasHydrated) return null;
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +64,7 @@ export default function LoginPage() {
           >
             <Compass className="h-6 w-6" />
           </div>
-          <h1 className="font-display font-bold text-2xl">Welcome Back</h1>
+          <h1 className="font-display font-bold text-2xl">CareerPilot</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--cp-text-secondary)' }}>Navigate your career with intelligent tools</p>
         </div>
 

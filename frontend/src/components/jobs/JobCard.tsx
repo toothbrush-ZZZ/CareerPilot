@@ -73,6 +73,10 @@ export function JobCard({ job }: JobCardProps) {
               <Clock size={14} style={{ color: 'var(--cp-text-muted)' }} />
               <span>{job.deadline ? `Deadline: ${new Date(job.deadline).toLocaleDateString()}` : 'Deadline: Not available'}</span>
             </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar size={14} style={{ color: 'var(--cp-text-muted)' }} />
+              <span>{job.postedAt ? `Posted: ${job.postedAt}` : 'Posted: Not available'}</span>
+            </div>
           </div>
 
           <a

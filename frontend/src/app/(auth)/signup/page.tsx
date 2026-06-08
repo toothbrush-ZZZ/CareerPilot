@@ -9,13 +9,22 @@ import { Compass, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react
 
 export default function SignupPage() {
   const router = useRouter();
-  const { login } = useAppStore();
+  const { login, isAuthenticated, hasHydrated } = useAppStore();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Show nothing while hydrating to prevent flash
+  if (!hasHydrated) return null;
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

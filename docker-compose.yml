@@ -11,11 +11,11 @@ services:
   frontend:
     build: 
         context: ./frontend
-        provenance: false
+        args:
+          # NEXT_PUBLIC_* vars are baked into the JS bundle at build time.
+          # Change this value when deploying to a remote server.
+          - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      #- CORS_ORIGIN=*
     depends_on:
       - backend

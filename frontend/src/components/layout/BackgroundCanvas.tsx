@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 
 const WORD_POOL = [
   'offer received','senior engineer','technical screen','resume updated',
@@ -19,6 +20,7 @@ function getRandomWord() {
 
 export function BackgroundCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -104,7 +106,9 @@ export function BackgroundCanvas() {
           const fade = t < 0.15 ? t / 0.15 : t > 0.85 ? (1 - t) / 0.15 : 1;
           const opacity = str.baseOpacity * fade;
 
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, opacity)})`;
+          const isLight = resolvedTheme === 'light';
+          const rgb = isLight ? '0, 0, 0' : '255, 255, 255';
+          ctx.fillStyle = `rgba(${rgb}, ${Math.max(0, opacity)})`;
           ctx.fillText(str.text, col.x, str.y);
         });
       });
@@ -118,7 +122,7 @@ export function BackgroundCanvas() {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [resolvedTheme]);
 
   return (
     <canvas
